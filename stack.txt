@@ -1,0 +1,137 @@
+Stack Tecnológico Recomendado: Node.js + React
+Por qué esta combinación:
+Backend: Node.js + Express
+
+Ecosistema maduro y gratuito
+Excelente para APIs REST
+Compatible con MySQL (mysql2, Sequelize)
+Deploy gratuito: Railway, Render, Fly.io
+Manejo eficiente de conexiones concurrentes
+
+Frontend: React
+
+Ventaja clave: React Native permite reutilizar código para app móvil nativa después
+Comunidad más grande que Angular/Vue
+Más fácil encontrar soluciones y librerías
+PWA capabilities para web móvil
+Deploy gratuito: Vercel, Netlify, Cloudflare Pages
+
+Descartando alternativas:
+
+❌ Angular: Más pesado, curva de aprendizaje mayor
+❌ Vue: Menor ecosistema, menos recursos para móvil
+
+Arquitectura Propuesta
+┌─────────────────┐
+│   React PWA     │ ← Progressive Web App (móvil-first)
+│   + TailwindCSS │
+└────────┬────────┘
+         │ REST API
+┌────────▼────────┐
+│   Node.js API   │
+│   + Express     │
+│   + JWT Auth    │
+└────────┬────────┘
+         │
+┌────────▼────────┐
+│  MySQL 8.0      │
+│  (tu esquema +  │
+│   extensiones)  │
+└─────────────────┘
+Ideas de Funcionalidades (Prioridad)
+MVP (Mínimo Viable)
+
+Sistema de usuarios
+
+Registro/Login con JWT
+Perfil básico (username, avatar, país)
+
+
+Selección de eventos
+
+Lista de próximos eventos UFC
+Detalle de peleas por evento
+
+
+Sistema de pronósticos
+
+Seleccionar ganador (Red/Blue corner)
+Método de victoria (KO/TKO, Submission, Decision)
+Ronda de finalización (opcional)
+Guardar múltiples pronósticos antes del evento
+
+
+Cálculo de puntos
+
+Sistema de puntos base:
+
+Ganador correcto: +10 pts
+Método correcto: +5 pts adicionales
+Ronda exacta: +3 pts adicionales
+
+
+Multiplicador por odds (cuota de apuesta)
+
+
+Tabla de clasificación
+
+Ranking general
+Puntos por evento
+Estadísticas personales
+
+
+
+Fase 2 (Después del MVP)
+
+Sistema de apuestas ficticias
+
+Monedas virtuales
+Gestión de "bankroll"
+ROI tracking
+
+
+Social features
+
+Ligas privadas entre amigos
+Comparar pronósticos
+Chat por evento
+
+
+Estadísticas avanzadas
+
+Historial de aciertos por peleador
+Tendencias de pronósticos
+Análisis de rendimiento
+
+
+
+Fase 3 (Escalamiento)
+
+Gamificación
+
+Logros/badges
+Rachas (streaks)
+Niveles de usuario
+
+
+Notificaciones
+
+Push notifications (PWA)
+Recordatorios de eventos
+Resultados en vivo
+
+Hosting Gratuito Recomendado
+Backend:
+
+Railway.app (500 hrs/mes gratis)
+Render.com (750 hrs/mes gratis)
+
+Frontend:
+
+Vercel (ilimitado para hobby)
+Netlify (100GB/mes gratis)
+
+Base de Datos:
+
+PlanetScale (5GB gratis, MySQL compatible)
+Railway MySQL (compartido con backend)
