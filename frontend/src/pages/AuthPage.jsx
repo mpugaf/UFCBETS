@@ -103,7 +103,12 @@ const AuthPage = () => {
     <div className="min-h-screen flex items-center justify-center px-4 py-12">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold text-white mb-2">\ud83e\udd4a UFC</h1>
+          <img
+            src="/images/logo/mmglogo.jpeg"
+            alt="UFC Logo"
+            className="mx-auto mb-6 h-32 w-auto object-contain rounded-lg shadow-lg"
+          />
+          <h1 className="text-5xl font-bold text-white mb-2">MMA BETS</h1>
           <h2 className="text-3xl font-bold text-white">Predictions</h2>
           <p className="text-white/80 mt-2">
             {registrationToken ? 'Completa tu registro' : 'Inicia sesión para continuar'}
@@ -171,7 +176,7 @@ const AuthPage = () => {
                       setLoginData({ ...loginData, password: e.target.value })
                     }
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition"
-                    placeholder="\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"
+                    placeholder="Contraseña"
                   />
                 </div>
 
@@ -187,12 +192,12 @@ const AuthPage = () => {
           ) : (
             <>
               <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-                Crear Cuenta
+                ---
               </h3>
 
               {!registrationToken ? (
                 <div className="text-center py-8">
-                  <div className="text-5xl mb-4">\ud83d\udd12</div>
+                  <div className="text-5xl mb-4">Crear Cuenta</div>
                   <p className="text-gray-600 mb-2">El registro requiere un link de invitación</p>
                   <p className="text-sm text-gray-500">Contacta al administrador para obtener acceso</p>
                 </div>
@@ -280,7 +285,7 @@ const AuthPage = () => {
                     disabled={loading}
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-lg font-semibold hover:from-green-600 hover:to-emerald-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
+                    {loading ? 'Creando cuenta...' : '---'}
                   </button>
                 </form>
               )}
@@ -289,7 +294,7 @@ const AuthPage = () => {
 
           {!registrationToken && (
             <div className="mt-6 text-center text-sm text-gray-600">
-              <p>Contacta al administrador para obtener acceso</p>
+              <p>---</p>
             </div>
           )}
         </div>

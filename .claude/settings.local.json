@@ -5,7 +5,9 @@
       "Bash(pkill:*)",
       "Bash(npm uninstall:*)",
       "Bash(npm install:*)",
-      "Bash(mysql:*)"
+      "Bash(mysql:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)"
     ]
   }
 }

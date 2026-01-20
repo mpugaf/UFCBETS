@@ -41,7 +41,12 @@ const adminAuthMiddleware = async (req, res, next) => {
     if (user.role !== 'admin') {
       return res.status(403).json({
         success: false,
-        message: 'Access denied. Admin role required.'
+        message: 'Access denied. Admin role required.',
+        details: {
+          current_user: user.username,
+          current_role: user.role,
+          required_role: 'admin'
+        }
       });
     }
 

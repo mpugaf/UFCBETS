@@ -102,7 +102,6 @@ class AuthController {
             country_id: newUser.country_id,
             country_name: newUser.country_name,
             country_code: newUser.country_code,
-            total_points: newUser.total_points,
             created_at: newUser.created_at
           },
           token
@@ -170,7 +169,6 @@ class AuthController {
             country_id: user.country_id,
             country_name: user.country_name,
             country_code: user.country_code,
-            total_points: user.total_points,
             created_at: user.created_at
           },
           token
@@ -208,7 +206,6 @@ class AuthController {
           country_id: user.country_id,
           country_name: user.country_name,
           country_code: user.country_code,
-          total_points: user.total_points,
           created_at: user.created_at
         }
       });

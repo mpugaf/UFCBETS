@@ -34,8 +34,9 @@ class User {
 
   static async findById(userId) {
     const query = `
-      SELECT u.user_id, u.username, u.nickname, u.email, u.role, u.country_id, u.total_points,
-             u.created_at, c.country_name, c.country_code
+      SELECT u.user_id, u.username, u.nickname, u.email, u.role, u.country_id, u.can_bet,
+             u.created_at, c.country_name, c.country_code,
+             COALESCE((SELECT SUM(points_earned) FROM user_points_history WHERE user_id = u.user_id), 0) as total_points
       FROM users u
       LEFT JOIN dim_countries c ON u.country_id = c.country_id
       WHERE u.user_id = ?
@@ -44,21 +45,21 @@ class User {
     return rows[0] || null;
   }
 
+  // DEPRECATED: Points are now tracked in user_points_history table
+  // This method is kept for backward compatibility but does nothing
   static async updatePoints(userId, points) {
-    const query = `
-      UPDATE users
-      SET total_points = total_points + ?
-      WHERE user_id = ?
-    `;
-    await pool.execute(query, [points, userId]);
+    // No longer needed - points are managed through user_points_history
+    return;
   }
 
   static async getLeaderboard(limit = 10) {
     const query = `
-      SELECT u.user_id, u.username, u.nickname, u.total_points, c.country_name, c.country_code
+      SELECT u.user_id, u.username, u.nickname, c.country_name, c.country_code,
+             COALESCE((SELECT SUM(points_earned) FROM user_points_history WHERE user_id = u.user_id), 0) as total_points
       FROM users u
       LEFT JOIN dim_countries c ON u.country_id = c.country_id
-      ORDER BY u.total_points DESC
+      WHERE u.role = 'user'
+      ORDER BY total_points DESC
       LIMIT ?
     `;
     const [rows] = await pool.execute(query, [limit]);

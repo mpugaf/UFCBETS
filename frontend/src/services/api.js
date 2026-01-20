@@ -4,6 +4,7 @@ const API_URL = 'http://192.168.100.16:3021/api';
 
 const api = axios.create({
   baseURL: API_URL,
+  timeout: 30000, // 30 seconds timeout
   headers: {
     'Content-Type': 'application/json',
   },

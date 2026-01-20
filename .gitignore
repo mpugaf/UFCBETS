@@ -18,3 +18,10 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+# Uploads - Ignorar todas las imágenes pero mantener la estructura y READMEs
+uploads/**/*
+!uploads/**/.gitkeep
+!uploads/**/README.md
+!uploads/
+!uploads/fighters/

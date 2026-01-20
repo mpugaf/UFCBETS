@@ -8,8 +8,15 @@ import ProfileSettings from './pages/ProfileSettings';
 import Maintainers from './pages/Maintainers';
 import Betting from './pages/Betting';
 import MyBets from './pages/MyBets';
+import EventsList from './pages/EventsList';
 import ManageRegistrationTokens from './pages/ManageRegistrationTokens';
 import FighterImageManager from './pages/FighterImageManager';
+import UsersManagement from './pages/UsersManagement';
+import PublicPredictions from './pages/PublicPredictions';
+import FightResults from './pages/FightResults';
+import Leaderboard from './pages/Leaderboard';
+import ClearBets from './pages/ClearBets';
+import EventDetails from './pages/EventDetails';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -92,6 +99,14 @@ function AppContent() {
           }
         />
         <Route
+          path="/events"
+          element={
+            <PrivateRoute>
+              <EventsList />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path="/betting"
           element={
             <PrivateRoute>
@@ -120,6 +135,54 @@ function AppContent() {
           element={
             <PrivateRoute>
               <FighterImageManager />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/users-management"
+          element={
+            <PrivateRoute>
+              <UsersManagement />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/public-predictions"
+          element={
+            <PrivateRoute>
+              <PublicPredictions />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/fight-results"
+          element={
+            <PrivateRoute>
+              <FightResults />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/leaderboard"
+          element={
+            <PrivateRoute>
+              <Leaderboard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/clear-bets"
+          element={
+            <PrivateRoute>
+              <ClearBets />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/event-details/:eventId"
+          element={
+            <PrivateRoute>
+              <EventDetails />
             </PrivateRoute>
           }
         />

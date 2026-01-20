@@ -52,7 +52,6 @@ class AdminController {
           country_id: newUser.country_id,
           country_name: newUser.country_name,
           country_code: newUser.country_code,
-          total_points: newUser.total_points,
           created_at: newUser.created_at
         }
       });
@@ -70,7 +69,7 @@ class AdminController {
     try {
       const { pool } = require('../config/database');
       const query = `
-        SELECT u.user_id, u.username, u.email, u.role, u.total_points,
+        SELECT u.user_id, u.username, u.email, u.role,
                u.created_at, c.country_name, c.country_code
         FROM users u
         LEFT JOIN dim_countries c ON u.country_id = c.country_id

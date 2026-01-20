@@ -8,7 +8,17 @@ const BetOption = ({ type, fighter, odds, selected, onClick, disabled }) => {
     }
   };
 
+  // Helper function to safely format odds
+  const formatOdds = (oddsValue) => {
+    if (oddsValue === null || oddsValue === undefined) return null;
+    const numOdds = parseFloat(oddsValue);
+    if (isNaN(numOdds)) return null;
+    return numOdds.toFixed(2);
+  };
+
   const renderContent = () => {
+    const formattedOdds = formatOdds(odds);
+
     if (type === 'draw') {
       return (
         <div className="flex flex-col items-center space-y-2">
@@ -17,7 +27,21 @@ const BetOption = ({ type, fighter, odds, selected, onClick, disabled }) => {
           </div>
           <div className="text-center">
             <div className="font-semibold text-lg">Empate</div>
-            {odds && <div className="text-xl font-bold text-blue-600">{odds.toFixed(2)}</div>}
+            {formattedOdds && <div className="text-xl font-bold text-blue-600">{formattedOdds}</div>}
+          </div>
+        </div>
+      );
+    }
+
+    if (type === 'no_contest') {
+      return (
+        <div className="flex flex-col items-center space-y-2">
+          <div className="w-20 h-20 rounded-full bg-orange-300 flex items-center justify-center text-3xl">
+            🚫
+          </div>
+          <div className="text-center">
+            <div className="font-semibold text-lg">No Contest</div>
+            {formattedOdds && <div className="text-xl font-bold text-orange-600">{formattedOdds}</div>}
           </div>
         </div>
       );
@@ -32,7 +56,7 @@ const BetOption = ({ type, fighter, odds, selected, onClick, disabled }) => {
         />
         <div className="text-center">
           <div className="font-semibold text-lg">{fighter?.name}</div>
-          {odds && <div className="text-xl font-bold text-blue-600">{odds.toFixed(2)}</div>}
+          {formattedOdds && <div className="text-xl font-bold text-blue-600">{formattedOdds}</div>}
         </div>
       </div>
     );

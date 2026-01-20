@@ -12,6 +12,9 @@ const maintainersRoutes = require('./routes/maintainersRoutes');
 const betsRoutes = require('./routes/betsRoutes');
 const registrationTokenRoutes = require('./routes/registrationTokenRoutes');
 const fighterRoutes = require('./routes/fighterRoutes');
+const usersRoutes = require('./routes/usersRoutes');
+const resultsRoutes = require('./routes/resultsRoutes');
+const leaderboardRoutes = require('./routes/leaderboardRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 21;
@@ -65,6 +68,9 @@ app.use('/api/maintainers', maintainersRoutes);
 app.use('/api/bets', betsRoutes);
 app.use('/api/registration-tokens', registrationTokenRoutes);
 app.use('/api/fighters', fighterRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/results', resultsRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 // 404 handler
 app.use((req, res) => {

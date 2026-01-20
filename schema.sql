@@ -51,6 +51,15 @@ CREATE TABLE dim_fight_methods (
     INDEX idx_method_category (method_category)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE dim_fight_categories (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    category_name VARCHAR(50) NOT NULL UNIQUE,
+    category_code VARCHAR(20) NOT NULL UNIQUE,
+    display_order INT NOT NULL,
+    description VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ============================================
 -- DIMENSIONES PRINCIPALES
 -- ============================================
@@ -169,6 +178,8 @@ CREATE TABLE fact_fights (
     event_id INT NOT NULL,
     time_id INT NOT NULL,
     weight_class_id INT NOT NULL,
+    fight_category_id INT,
+    card_position INT DEFAULT 0,
     referee_id INT,
 
     -- Peleadores
@@ -219,6 +230,7 @@ CREATE TABLE fact_fights (
     FOREIGN KEY (event_id) REFERENCES dim_events(event_id) ON DELETE CASCADE,
     FOREIGN KEY (time_id) REFERENCES dim_time(time_id) ON DELETE CASCADE,
     FOREIGN KEY (weight_class_id) REFERENCES dim_weight_classes(weight_class_id) ON DELETE CASCADE,
+    FOREIGN KEY (fight_category_id) REFERENCES dim_fight_categories(category_id) ON DELETE SET NULL,
     FOREIGN KEY (referee_id) REFERENCES dim_referees(referee_id) ON DELETE SET NULL,
     FOREIGN KEY (fighter_red_id) REFERENCES dim_fighters(fighter_id) ON DELETE CASCADE,
     FOREIGN KEY (fighter_blue_id) REFERENCES dim_fighters(fighter_id) ON DELETE CASCADE,
@@ -230,6 +242,7 @@ CREATE TABLE fact_fights (
     INDEX idx_fighter_red_fights (fighter_red_id),
     INDEX idx_fighter_blue_fights (fighter_blue_id),
     INDEX idx_weight_class_fights (weight_class_id),
+    INDEX idx_fight_category (fight_category_id),
     INDEX idx_fight_date (time_id),
     INDEX idx_title_fights (is_title_fight),
     INDEX idx_method (method_id),
