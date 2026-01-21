@@ -90,6 +90,18 @@ const AdminPanel = () => {
               >
                 Dashboard
               </button>
+              <button
+                onClick={() => navigate('/maintainers')}
+                className="text-white hover:text-white/80 font-medium transition"
+              >
+                Mantenedores
+              </button>
+              <button
+                onClick={() => navigate('/invitations')}
+                className="text-white hover:text-white/80 font-medium transition"
+              >
+                Invitaciones
+              </button>
               <div className="text-white text-right">
                 <p className="font-semibold">{user?.username}</p>
                 <p className="text-sm text-white/70">{user?.role}</p>

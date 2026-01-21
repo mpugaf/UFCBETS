@@ -18,7 +18,7 @@ const leaderboardController = {
         });
       }
 
-      // Get leaderboard for this event using user_points_history
+      // Get leaderboard for this specific event only
       const [rows] = await pool.execute(
         `SELECT
           u.user_id,
@@ -36,12 +36,10 @@ const leaderboardController = {
             2
           ) as accuracy_percentage
         FROM users u
-        INNER JOIN user_bets ub ON u.user_id = ub.user_id
-        INNER JOIN fact_fights ff ON ub.fight_id = ff.fight_id
+        LEFT JOIN user_bets ub ON u.user_id = ub.user_id AND ub.event_id = ?
         LEFT JOIN user_points_history uph ON ub.bet_id = uph.bet_id
-        WHERE ff.event_id = ? AND u.role = 'user'
+        WHERE u.role = 'user'
         GROUP BY u.user_id, u.username, u.nickname
-        HAVING total_bets > 0
         ORDER BY total_points DESC, correct_bets DESC, accuracy_percentage DESC`,
         [eventId]
       );
@@ -99,13 +97,12 @@ const leaderboardController = {
             2
           ) as accuracy_percentage
         FROM users u
-        INNER JOIN user_bets ub ON u.user_id = ub.user_id AND ub.status IN ('won', 'lost')
-        INNER JOIN fact_fights ff ON ub.fight_id = ff.fight_id
-        INNER JOIN dim_events e ON ff.event_id = e.event_id
+        LEFT JOIN user_bets ub ON u.user_id = ub.user_id AND ub.status IN ('won', 'lost')
+        LEFT JOIN fact_fights ff ON ub.fight_id = ff.fight_id
+        LEFT JOIN dim_events e ON ff.event_id = e.event_id AND (${dateCondition})
         LEFT JOIN user_points_history uph ON ub.bet_id = uph.bet_id
-        WHERE u.role = 'user' AND ${dateCondition}
+        WHERE u.role = 'user'
         GROUP BY u.user_id, u.username, u.nickname
-        HAVING total_bets > 0
         ORDER BY total_points DESC, correct_bets DESC, accuracy_percentage DESC`
       );
 
@@ -127,7 +124,11 @@ const leaderboardController = {
   async getAvailableYears(req, res) {
     try {
       const [rows] = await pool.execute(
-        `SELECT DISTINCT YEAR(e.event_date) as year
+        `SELECT DISTINCT
+           CASE
+             WHEN e.event_date >= '2025-12-06' AND e.event_date <= '2026-12-31' THEN 2026
+             ELSE YEAR(e.event_date)
+           END as year
          FROM dim_events e
          INNER JOIN fact_fights ff ON e.event_id = ff.event_id
          INNER JOIN user_bets ub ON ff.fight_id = ub.fight_id

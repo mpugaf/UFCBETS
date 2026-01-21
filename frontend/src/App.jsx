@@ -17,6 +17,8 @@ import FightResults from './pages/FightResults';
 import Leaderboard from './pages/Leaderboard';
 import ClearBets from './pages/ClearBets';
 import EventDetails from './pages/EventDetails';
+import InvitationRegister from './pages/InvitationRegister';
+import InvitationsManager from './pages/InvitationsManager';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -63,6 +65,18 @@ function AppContent() {
           element={
             <PublicRoute>
               <LoginError />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/register/:token"
+          element={<InvitationRegister />}
+        />
+        <Route
+          path="/login"
+          element={
+            <PublicRoute>
+              <AuthPage />
             </PublicRoute>
           }
         />
@@ -183,6 +197,14 @@ function AppContent() {
           element={
             <PrivateRoute>
               <EventDetails />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/invitations"
+          element={
+            <PrivateRoute>
+              <InvitationsManager />
             </PrivateRoute>
           }
         />

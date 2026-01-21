@@ -22,6 +22,10 @@ const Leaderboard = () => {
   useEffect(() => {
     if (viewMode === 'event' && selectedEvent) {
       loadEventLeaderboard(selectedEvent);
+    } else if (viewMode === 'event' && !selectedEvent) {
+      // Clear leaderboard when no event is selected
+      setLeaderboard([]);
+      setLoading(false);
     } else if (viewMode === 'yearly' && selectedYear) {
       loadYearlyLeaderboard(selectedYear);
     }
@@ -34,9 +38,8 @@ const Leaderboard = () => {
       const closedEvents = eventsRes.data.data.filter(e => !e.betting_enabled);
       setEvents(closedEvents);
 
-      if (closedEvents.length > 0) {
-        setSelectedEvent(closedEvents[0].event_id);
-      }
+      // Don't auto-select any event - let user choose
+      setSelectedEvent(null);
 
       // Load available years
       const yearsRes = await api.get('/leaderboard/years');

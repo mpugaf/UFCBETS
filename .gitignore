@@ -4,6 +4,8 @@ package-lock.json
 
 # Environment variables
 .env
+.env.*
+!.env.example
 
 # Logs
 *.log
@@ -25,3 +27,33 @@ uploads/**/*
 !uploads/**/README.md
 !uploads/
 !uploads/fighters/
+
+# Archivos de despliegue y configuración
+PLAN_DESPLIEGUE.txt
+*_DESPLIEGUE.txt
+TODO.txt
+NOTAS.txt
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+
+# Testing
+coverage/
+.nyc_output/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Temporales
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# Archivos de sistema
+*~
+.directory

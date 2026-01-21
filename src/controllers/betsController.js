@@ -177,6 +177,7 @@ class BetsController {
       const fight = fightRows[0];
       const odds = fight.decimal_odds || 1.5;
       const potential_return = (bet_amount * odds).toFixed(2);
+      const event_id = fight.event_id;
 
       // Check if user already has a bet for this fight
       const [existingBets] = await pool.execute(
@@ -188,15 +189,15 @@ class BetsController {
         // Update existing bet
         await pool.execute(`
           UPDATE user_bets
-          SET predicted_winner_id = ?, bet_amount = ?, potential_return = ?, odds_value = ?
+          SET predicted_winner_id = ?, bet_amount = ?, potential_return = ?, odds_value = ?, event_id = ?
           WHERE user_id = ? AND fight_id = ?
-        `, [predicted_winner_id, bet_amount, potential_return, odds, userId, fight_id]);
+        `, [predicted_winner_id, bet_amount, potential_return, odds, event_id, userId, fight_id]);
       } else {
         // Create new bet
         await pool.execute(`
-          INSERT INTO user_bets (user_id, fight_id, predicted_winner_id, bet_amount, potential_return, odds_value)
-          VALUES (?, ?, ?, ?, ?, ?)
-        `, [userId, fight_id, predicted_winner_id, bet_amount, potential_return, odds]);
+          INSERT INTO user_bets (user_id, fight_id, event_id, predicted_winner_id, bet_amount, potential_return, odds_value)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [userId, fight_id, event_id, predicted_winner_id, bet_amount, potential_return, odds]);
       }
 
       res.json({
@@ -508,7 +509,7 @@ class BetsController {
         }
 
         const [fightRows] = await connection.execute(
-          'SELECT fight_id FROM fact_fights WHERE fight_id = ? AND winner_id IS NULL',
+          'SELECT fight_id, event_id FROM fact_fights WHERE fight_id = ? AND winner_id IS NULL',
           [fight_id]
         );
 
@@ -516,6 +517,7 @@ class BetsController {
           throw new Error(`Pelea ${fight_id} no encontrada o las apuestas est\u00e1n cerradas`);
         }
 
+        const event_id = fightRows[0].event_id;
         const bet_amount = 100;
         const potential_return = (bet_amount * odds_value).toFixed(2);
 
@@ -529,9 +531,9 @@ class BetsController {
           throw new Error(`Ya tienes una apuesta registrada para la pelea ${fight_id}. No puedes modificarla.`);
         } else {
           await connection.execute(`
-            INSERT INTO user_bets (user_id, fight_id, bet_type, predicted_winner_id, bet_amount, potential_return, odds_value)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `, [userId, fight_id, bet_type, predicted_winner_id, bet_amount, potential_return, odds_value]);
+            INSERT INTO user_bets (user_id, fight_id, event_id, bet_type, predicted_winner_id, bet_amount, potential_return, odds_value)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `, [userId, fight_id, event_id, bet_type, predicted_winner_id, bet_amount, potential_return, odds_value]);
           results.push({ fight_id, action: 'created' });
         }
       }

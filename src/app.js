@@ -15,6 +15,7 @@ const fighterRoutes = require('./routes/fighterRoutes');
 const usersRoutes = require('./routes/usersRoutes');
 const resultsRoutes = require('./routes/resultsRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
+const invitationsRoutes = require('./routes/invitationsRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 21;
@@ -71,6 +72,7 @@ app.use('/api/fighters', fighterRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/results', resultsRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/invitations', invitationsRoutes);
 
 // 404 handler
 app.use((req, res) => {

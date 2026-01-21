@@ -46,8 +46,25 @@ const changePasswordValidation = [
     .withMessage('New password must be at least 6 characters long')
 ];
 
+const registerWithInvitationValidation = [
+  body('username')
+    .trim()
+    .isLength({ min: 3, max: 50 })
+    .withMessage('El nombre de usuario debe tener entre 3 y 50 caracteres')
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('El nombre de usuario solo puede contener letras, números y guiones bajos'),
+  body('password')
+    .isLength({ min: 6 })
+    .withMessage('La contraseña debe tener al menos 6 caracteres'),
+  body('invitationToken')
+    .trim()
+    .notEmpty()
+    .withMessage('Token de invitación requerido')
+];
+
 // Routes
 router.post('/register', registerValidation, authController.register);
+router.post('/register-invitation', registerWithInvitationValidation, authController.registerWithInvitation);
 router.post('/login', loginValidation, authController.login);
 router.get('/profile', authMiddleware, authController.getProfile);
 router.post('/change-password', authMiddleware, changePasswordValidation, authController.changePassword);
