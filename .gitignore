@@ -5,7 +5,7 @@ package-lock.json
 # Environment variables
 .env
 .env.*
-!.env.example
+.env.example
 
 # Logs
 *.log
@@ -21,6 +21,9 @@ Thumbs.db
 *.swp
 *.swo
 
+# Claude Code
+.claude/
+
 # Uploads - Ignorar todas las imágenes pero mantener la estructura y READMEs
 uploads/**/*
 !uploads/**/.gitkeep
@@ -33,6 +36,25 @@ PLAN_DESPLIEGUE.txt
 *_DESPLIEGUE.txt
 TODO.txt
 NOTAS.txt
+
+# Notas de sesión y documentación interna
+FIXES_*.md
+FIX_*.md
+MEJORAS_*.md
+RESUMEN_*.md
+CAMBIOS_*.md
+RESULTADO_*.md
+INSTRUCCIONES.md
+IMAGENES.md
+stack.txt
+
+# Scripts de actualización puntual
+apply_updates.sh
+apply_*.sh
+
+# Seeds específicos de eventos (usar seed_data.sql para datos base)
+seed_ufc_*.sql
+seed_*_updated.sql
 
 # Build
 dist/

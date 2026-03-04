@@ -28,7 +28,8 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // Solo redirigir si es 401 y NO es el endpoint de login
+    if (error.response?.status === 401 && !error.config?.url?.includes('/auth/login')) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/';
@@ -74,6 +75,12 @@ export const authService = {
   getToken: () => {
     return localStorage.getItem('token');
   },
+};
+
+export const leaderboardService = {
+  getAllWinnerMessages: () => api.get('/leaderboard/winner-messages'),
+  saveWinnerMessage: (eventId, message) =>
+    api.post(`/leaderboard/event/${eventId}/winner-message`, { message }),
 };
 
 export default api;

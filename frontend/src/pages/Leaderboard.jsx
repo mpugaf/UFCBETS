@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api, { leaderboardService } from '../services/api';
 
 const Leaderboard = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState('event'); // 'event' or 'yearly'
+  const { user } = useAuth();
+  const [viewMode, setViewMode] = useState('event');
   const [events, setEvents] = useState([]);
   const [years, setYears] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -14,37 +12,68 @@ const Leaderboard = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [allWinnerMessages, setAllWinnerMessages] = useState([]);
+  const [winnerMessage, setWinnerMessage] = useState(null);
+  const [eventResolved, setEventResolved] = useState(false);
+  const [draftMessage, setDraftMessage] = useState('');
+  const [savingMessage, setSavingMessage] = useState(false);
 
-  useEffect(() => {
-    loadInitialData();
-  }, []);
+  useEffect(() => { loadInitialData(); loadAllWinnerMessages(); }, []);
 
   useEffect(() => {
     if (viewMode === 'event' && selectedEvent) {
       loadEventLeaderboard(selectedEvent);
     } else if (viewMode === 'event' && !selectedEvent) {
-      // Clear leaderboard when no event is selected
       setLeaderboard([]);
+      setWinnerMessage(null);
+      setEventResolved(false);
+      setDraftMessage('');
       setLoading(false);
     } else if (viewMode === 'yearly' && selectedYear) {
+      setWinnerMessage(null);
+      setEventResolved(false);
+      setDraftMessage('');
       loadYearlyLeaderboard(selectedYear);
     }
   }, [viewMode, selectedEvent, selectedYear]);
 
+  const loadAllWinnerMessages = async () => {
+    try {
+      const res = await leaderboardService.getAllWinnerMessages();
+      setAllWinnerMessages(res.data.data || []);
+    } catch (_) {}
+  };
+
   const loadInitialData = async () => {
     try {
-      // Load closed events
-      const eventsRes = await api.get('/bets/events');
-      const closedEvents = eventsRes.data.data.filter(e => !e.betting_enabled);
+      const [eventsRes, yearsRes, statusRes] = await Promise.all([
+        api.get('/bets/events'),
+        api.get('/leaderboard/years'),
+        api.get('/config/betting-status'),
+      ]);
+
+      let closedEvents = eventsRes.data.data.filter(e => !e.betting_enabled);
+      if (user?.role !== 'admin') {
+        closedEvents = closedEvents.filter(e => new Date(e.event_date).getFullYear() >= 2026);
+      }
+      // Ordenar por fecha DESC para que el más reciente quede primero
+      closedEvents.sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
       setEvents(closedEvents);
 
-      // Don't auto-select any event - let user choose
-      setSelectedEvent(null);
+      const status = statusRes.data.data;
+      let defaultEvent = null;
 
-      // Load available years
-      const yearsRes = await api.get('/leaderboard/years');
+      if (status?.betting_enabled && status?.current_event_id) {
+        // Apuestas abiertas: intentar usar el evento vigente si está en la lista
+        const found = closedEvents.find(e => e.event_id === status.current_event_id);
+        defaultEvent = found ? String(found.event_id) : (closedEvents[0]?.event_id ? String(closedEvents[0].event_id) : null);
+      } else {
+        // Apuestas cerradas: usar el último evento finalizado
+        defaultEvent = closedEvents[0]?.event_id ? String(closedEvents[0].event_id) : null;
+      }
+
+      setSelectedEvent(defaultEvent);
       setYears(yearsRes.data.data);
-
       setLoading(false);
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -58,18 +87,44 @@ const Leaderboard = () => {
       setLoading(true);
       const res = await api.get(`/leaderboard/event/${eventId}`);
       setLeaderboard(res.data.data);
+      setEventResolved(res.data.event_resolved === true);
+      const wm = res.data.winner_message || null;
+      setWinnerMessage(wm);
+      setDraftMessage(wm?.message || '');
     } catch (error) {
       console.error('Error loading event leaderboard:', error);
-      if (error.response?.status === 403) {
-        setMessage({ type: 'error', text: 'Las apuestas deben estar cerradas para ver la clasificación' });
-      } else {
-        setMessage({ type: 'error', text: 'Error al cargar clasificación' });
-      }
+      setMessage({
+        type: 'error',
+        text: error.response?.status === 403
+          ? 'Las apuestas deben estar cerradas para ver la clasificación'
+          : 'Error al cargar clasificación'
+      });
       setLeaderboard([]);
+      setWinnerMessage(null);
+      setDraftMessage('');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleSaveWinnerMessage = async () => {
+    if (!selectedEvent || !draftMessage.trim()) return;
+    try {
+      setSavingMessage(true);
+      const res = await leaderboardService.saveWinnerMessage(selectedEvent, draftMessage);
+      setWinnerMessage(res.data.data);
+      await loadAllWinnerMessages();
+      setMessage({ type: 'success', text: 'Mensaje guardado correctamente' });
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Error al guardar el mensaje'
+      });
+    } finally {
+      setSavingMessage(false);
+    }
+  };
+
 
   const loadYearlyLeaderboard = async (year) => {
     try {
@@ -97,206 +152,223 @@ const Leaderboard = () => {
     return event ? event.event_name : '';
   };
 
+  const formatDate = (dateString) =>
+    new Date(dateString).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+
   if (loading && leaderboard.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="text-white text-xl">Cargando clasificación...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <nav className="bg-white/10 backdrop-blur-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <span className="text-2xl font-bold text-white">🏆 Tabla de Clasificación</span>
-            <div className="flex items-center gap-4">
-              <button onClick={() => navigate('/dashboard')} className="text-white hover:text-white/80 font-medium">Dashboard</button>
-              <button onClick={() => navigate('/events')} className="text-white hover:text-white/80 font-medium">Eventos</button>
-              <button onClick={() => navigate('/my-bets')} className="text-white hover:text-white/80 font-medium">Mis Apuestas</button>
-              {user?.role === 'admin' && (
-                <button onClick={() => navigate('/maintainers')} className="text-white hover:text-white/80 font-medium">Mantenedores</button>
-              )}
-              <button onClick={logout} className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium">Cerrar Sesión</button>
-            </div>
-          </div>
+    <div className="max-w-6xl mx-auto">
+      {/* Title */}
+      <div className="mb-6">
+        <h1 className="text-4xl font-black text-white tracking-tight">
+          Clasi<span className="bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent">ficación</span>
+        </h1>
+      </div>
+
+      {/* Error/message */}
+      {message.text && (
+        <div className={`mb-4 p-4 rounded-xl border text-sm font-semibold ${
+          message.type === 'success'
+            ? 'bg-green-500/20 border-green-500/50 text-green-300'
+            : 'bg-red-500/20 border-red-500/50 text-red-300'
+        }`}>
+          {message.text}
         </div>
-      </nav>
+      )}
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {message.text && (
-          <div className={`mb-4 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
-            {message.text}
-          </div>
-        )}
-
-        {/* View Mode Tabs */}
-        <div className="flex gap-2 mb-6">
+      {/* View mode tabs */}
+      <div className="flex gap-2 mb-5">
+        {[
+          { id: 'event', label: '📅 Por Evento' },
+          { id: 'yearly', label: '📆 Clasificación Anual' },
+        ].map((tab) => (
           <button
-            onClick={() => setViewMode('event')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              viewMode === 'event'
-                ? 'bg-white text-purple-900'
-                : 'bg-white/20 text-white hover:bg-white/30'
+            key={tab.id}
+            onClick={() => setViewMode(tab.id)}
+            className={`px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 ${
+              viewMode === tab.id
+                ? 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-black shadow-lg shadow-yellow-900/40'
+                : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white border border-white/10'
             }`}
           >
-            📅 Por Evento
+            {tab.label}
           </button>
-          <button
-            onClick={() => setViewMode('yearly')}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              viewMode === 'yearly'
-                ? 'bg-white text-purple-900'
-                : 'bg-white/20 text-white hover:bg-white/30'
-            }`}
-          >
-            📆 Clasificación Anual
-          </button>
-        </div>
+        ))}
+      </div>
 
-        {/* Event/Year Selector */}
-        <div className="bg-white rounded-2xl shadow-2xl p-6 mb-6">
-          {viewMode === 'event' ? (
-            <>
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                Seleccionar Evento
-              </label>
+      {/* Selector */}
+      <div className="relative mb-5 overflow-hidden rounded-2xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-yellow-700 via-yellow-900 to-black rounded-2xl transform rotate-[0.3deg]"></div>
+        <div className="relative bg-gradient-to-br from-gray-900 via-yellow-950 to-gray-900 border-2 border-yellow-700/60 rounded-2xl p-5">
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, white 10px, white 11px)' }}></div>
+          <div className="relative z-10 flex items-center gap-4 flex-wrap">
+            <label className="text-yellow-300/80 text-xs uppercase tracking-widest font-bold shrink-0">
+              {viewMode === 'event' ? 'Seleccionar evento' : 'Seleccionar año'}
+            </label>
+            {viewMode === 'event' ? (
               <select
                 value={selectedEvent || ''}
                 onChange={(e) => setSelectedEvent(e.target.value)}
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                className="flex-1 min-w-[200px] bg-white/10 border border-white/30 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-yellow-500 transition-colors"
               >
-                <option value="">Seleccione un evento...</option>
+                <option value="" className="bg-gray-900">Seleccione un evento...</option>
                 {events.map((event) => (
-                  <option key={event.event_id} value={event.event_id}>
-                    {event.event_name} - {new Date(event.event_date).toLocaleDateString('es-ES')}
+                  <option key={event.event_id} value={event.event_id} className="bg-gray-900">
+                    {event.event_name} — {formatDate(event.event_date)}
                   </option>
                 ))}
               </select>
-            </>
-          ) : (
-            <>
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                Seleccionar Año
-              </label>
+            ) : (
               <select
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-600"
+                className="flex-1 min-w-[200px] bg-white/10 border border-white/30 text-white rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:border-yellow-500 transition-colors"
               >
                 {years.map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
+                  <option key={year} value={year} className="bg-gray-900">{year}</option>
                 ))}
               </select>
-            </>
-          )}
-        </div>
-
-        {/* Leaderboard Header */}
-        {leaderboard.length > 0 && (
-          <div className="bg-white rounded-t-2xl shadow-2xl p-6">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">
-              {viewMode === 'event'
-                ? `🏆 ${getEventName(selectedEvent)}`
-                : `🏆 Clasificación ${selectedYear}`}
-            </h2>
-            <p className="text-gray-600">
-              {viewMode === 'event'
-                ? `${leaderboard.length} participantes`
-                : `${leaderboard.length} participantes en ${leaderboard[0]?.events_participated || 0} eventos`}
-            </p>
+            )}
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Leaderboard Table */}
-        {leaderboard.length === 0 ? (
-          <div className="bg-white rounded-2xl shadow-2xl p-12 text-center">
-            <div className="text-6xl mb-4">📊</div>
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Sin Datos</h2>
-            <p className="text-gray-600">
+      {/* Table / Empty */}
+      {leaderboard.length === 0 ? (
+        <div className="relative overflow-hidden rounded-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-700 via-slate-800 to-black rounded-2xl"></div>
+          <div className="relative bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 border-2 border-slate-600 rounded-2xl p-16 text-center">
+            <div className="text-5xl mb-4">📊</div>
+            <h2 className="text-2xl font-black text-white mb-2">Sin datos</h2>
+            <p className="text-white/50 text-sm">
               {viewMode === 'event'
-                ? 'No hay clasificación disponible para este evento. Asegúrate de que las apuestas estén cerradas y que haya resultados ingresados.'
+                ? 'Selecciona un evento para ver su clasificación.'
                 : 'No hay clasificación disponible para este año.'}
             </p>
           </div>
-        ) : (
-          <div className="bg-white rounded-b-2xl shadow-2xl overflow-hidden">
-            <div className="overflow-x-auto">
+        </div>
+      ) : (
+        <div className="relative overflow-hidden rounded-2xl group">
+          {/* Glow layer */}
+          <div className="absolute inset-0 bg-gradient-to-br from-yellow-700 via-yellow-900 to-black rounded-2xl transform rotate-[0.4deg] group-hover:rotate-1 transition-transform duration-300"></div>
+          <div className="relative bg-gradient-to-br from-gray-900 via-yellow-950 to-gray-900 border-2 border-yellow-700 rounded-2xl overflow-hidden">
+            <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, white 10px, white 11px)' }}></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/10 to-transparent animate-shine"></div>
+
+            {/* Header */}
+            <div className="relative z-10 px-6 py-5 border-b border-yellow-700/50 flex justify-between items-center flex-wrap gap-3">
+              <div>
+                <h2 className="text-2xl font-black text-white">
+                  🏆 {viewMode === 'event' ? getEventName(selectedEvent) : `Clasificación ${selectedYear}`}
+                </h2>
+                <p className="text-yellow-300/70 text-sm mt-0.5">
+                  {leaderboard.length} participantes
+                  {viewMode === 'yearly' && leaderboard[0]?.events_participated
+                    ? ` · ${leaderboard[0].events_participated} eventos`
+                    : ''}
+                </p>
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="relative z-10 overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 border-b-2 border-gray-200">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Posición</th>
-                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Usuario</th>
+                <thead>
+                  <tr className="border-b border-yellow-700/30">
+                    <th className="px-6 py-3 text-left text-[10px] font-bold text-yellow-300/60 uppercase tracking-widest">Pos.</th>
+                    <th className="px-6 py-3 text-left text-[10px] font-bold text-yellow-300/60 uppercase tracking-widest">Usuario</th>
                     {viewMode === 'yearly' && (
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Eventos</th>
+                      <th className="px-6 py-3 text-center text-[10px] font-bold text-yellow-300/60 uppercase tracking-widest">Eventos</th>
                     )}
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Apuestas</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Aciertos</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Precisión</th>
-                    <th className="px-6 py-4 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">Puntos Totales</th>
+                    <th className="px-6 py-3 text-center text-[10px] font-bold text-yellow-300/60 uppercase tracking-widest">Apuestas</th>
+                    <th className="px-6 py-3 text-center text-[10px] font-bold text-yellow-300/60 uppercase tracking-widest">Aciertos</th>
+                    <th className="px-6 py-3 text-center text-[10px] font-bold text-yellow-300/60 uppercase tracking-widest">Precisión</th>
+                    <th className="px-6 py-3 text-center text-[10px] font-bold text-yellow-300/60 uppercase tracking-widest">Puntos</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody>
                   {leaderboard.map((entry, index) => {
                     const isCurrentUser = entry.user_id === user?.user_id;
+                    const isPodium = index < 3;
                     return (
                       <tr
                         key={entry.user_id}
-                        className={`${
-                          isCurrentUser ? 'bg-purple-50' : 'hover:bg-gray-50'
-                        } transition-colors`}
+                        className={`border-b border-white/5 transition-colors ${
+                          isCurrentUser
+                            ? 'bg-yellow-500/10'
+                            : isPodium
+                            ? 'bg-yellow-500/5 hover:bg-yellow-500/10'
+                            : 'hover:bg-white/5'
+                        }`}
                       >
+                        {/* Position */}
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-2xl font-bold">
-                            {getMedalEmoji(index)}
-                          </span>
+                          <span className="text-2xl font-black">{getMedalEmoji(index)}</span>
                         </td>
+
+                        {/* User */}
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold mr-3">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-black shadow-lg ${
+                              index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-600 text-black' :
+                              index === 1 ? 'bg-gradient-to-br from-gray-300 to-gray-500 text-black' :
+                              index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-600 text-black' :
+                              'bg-gradient-to-br from-red-700 to-red-900 text-white'
+                            }`}>
                               {(entry.nickname || entry.username).charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <div className="text-sm font-bold text-gray-800">
+                              <div className="text-sm font-bold text-white">
                                 {entry.nickname || entry.username}
-                                {isCurrentUser && <span className="ml-2 text-purple-600">(Tú)</span>}
+                                {isCurrentUser && <span className="ml-2 text-yellow-400 text-xs">(Tú)</span>}
                               </div>
                               {entry.nickname && (
-                                <div className="text-xs text-gray-500">@{entry.username}</div>
+                                <div className="text-xs text-white/40">@{entry.username}</div>
                               )}
                             </div>
                           </div>
                         </td>
+
+                        {/* Eventos (yearly only) */}
                         {viewMode === 'yearly' && (
                           <td className="px-6 py-4 whitespace-nowrap text-center">
-                            <span className="text-sm font-semibold text-gray-700">{entry.events_participated}</span>
+                            <span className="text-sm font-semibold text-white/70">{entry.events_participated}</span>
                           </td>
                         )}
+
+                        {/* Apuestas */}
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <span className="text-sm text-gray-700">{entry.total_bets}</span>
+                          <span className="text-sm text-white/70">{entry.total_bets}</span>
                         </td>
+
+                        {/* Aciertos */}
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-bold bg-green-500/20 border border-green-500/40 text-green-300">
                             {entry.correct_bets}
                           </span>
                         </td>
+
+                        {/* Precisión */}
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <span className="text-sm font-semibold text-gray-700">
-                            {entry.accuracy_percentage || 0}%
-                          </span>
+                          <span className="text-sm font-bold text-white/80">{entry.accuracy_percentage || 0}%</span>
                         </td>
+
+                        {/* Puntos */}
                         <td className="px-6 py-4 whitespace-nowrap text-center">
-                          <span className={`text-lg font-bold ${
-                            parseFloat(entry.total_points || 0) > 0
-                              ? 'text-green-600'
-                              : parseFloat(entry.total_points || 0) < 0
-                              ? 'text-red-600'
-                              : 'text-gray-600'
+                          <span className={`text-lg font-black ${
+                            parseFloat(entry.total_points || 0) > 0 ? 'text-yellow-400' :
+                            parseFloat(entry.total_points || 0) < 0 ? 'text-red-400' :
+                            'text-white/50'
                           }`}>
-                            {parseFloat(entry.total_points || 0).toFixed(2)} pts
+                            {parseFloat(entry.total_points || 0).toFixed(2)}
+                            <span className="text-xs font-normal text-white/40 ml-1">pts</span>
                           </span>
                         </td>
                       </tr>
@@ -306,8 +378,130 @@ const Leaderboard = () => {
               </table>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Winner messages — only for event view */}
+      {viewMode === 'event' && (() => {
+        // Winner of the currently selected event (if leaderboard loaded)
+        const winnerOfSelected = leaderboard.length > 0 ? leaderboard[0] : null;
+        const isWinnerOfSelected = winnerOfSelected?.user_id === user?.user_id && eventResolved;
+        const selectedEventInt = parseInt(selectedEvent);
+        const selectedHasMessage = allWinnerMessages.some(m => m.event_id === selectedEventInt);
+
+        // Build display list: existing messages + optional "write" slot for winner of selected event
+        const displayItems = [...allWinnerMessages];
+        if (isWinnerOfSelected && !selectedHasMessage && selectedEvent) {
+          const selInfo = events.find(e => e.event_id === selectedEventInt);
+          displayItems.push({
+            event_id: selectedEventInt,
+            event_name: selInfo?.event_name || '',
+            event_date: selInfo?.event_date || '',
+            user_id: user.user_id,
+            message: null,
+            username: user.username,
+            nickname: user.nickname,
+          });
+        }
+        displayItems.sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
+
+        // Show pending notice for the winner of an unresolved event
+        const winnerPending = winnerOfSelected?.user_id === user?.user_id && !eventResolved;
+
+        if (displayItems.length === 0 && !winnerPending) return null;
+
+        return (
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center gap-2 px-1">
+              <span className="text-lg">👑</span>
+              <span className="text-yellow-300 font-bold text-sm uppercase tracking-widest">Mensajes de ganadores</span>
+            </div>
+
+            {/* Notice: winner but event not yet fully resolved */}
+            {winnerPending && (
+              <div className="relative overflow-hidden rounded-2xl">
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-700 via-yellow-900 to-black rounded-2xl transform rotate-[0.2deg]"></div>
+                <div className="relative bg-gradient-to-br from-gray-900 via-yellow-950 to-gray-900 border-2 border-yellow-700/50 rounded-2xl p-4">
+                  <div className="relative z-10 flex items-center gap-3">
+                    <span className="text-2xl">⏳</span>
+                    <div>
+                      <p className="text-yellow-300 font-bold text-sm">Vas en primer lugar</p>
+                      <p className="text-white/50 text-xs mt-0.5">
+                        Podrás publicar tu mensaje cuando todas las peleas del evento tengan resultado.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {displayItems.map((item) => {
+              const isAuthor = item.user_id === user?.user_id;
+              const authorName = item.nickname || item.username;
+              const isNewMessage = item.message === null;
+
+              return (
+                <div key={item.event_id} className="relative overflow-hidden rounded-2xl">
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-700 via-yellow-900 to-black rounded-2xl transform rotate-[0.2deg]"></div>
+                  <div className="relative bg-gradient-to-br from-gray-900 via-yellow-950 to-gray-900 border-2 border-yellow-700/50 rounded-2xl p-4">
+                    <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, white 10px, white 11px)' }}></div>
+                    <div className="relative z-10">
+
+                      {/* Event badge + author */}
+                      <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-black bg-gradient-to-r from-yellow-400 to-yellow-500 px-2.5 py-0.5 rounded-full">
+                            {item.event_name}
+                          </span>
+                          <span className="text-white/40 text-xs">
+                            {item.event_date ? formatDate(item.event_date) : ''}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-yellow-300/70 text-xs font-semibold">{authorName}</span>
+                        </div>
+                      </div>
+
+                      {/* New message form (winner of selected event, no message yet) */}
+                      {isNewMessage && isAuthor && (
+                        <div>
+                          <p className="text-white/50 text-xs mb-2">
+                            ¡Ganaste este evento! Deja un mensaje para todos.
+                          </p>
+                          <textarea
+                            value={draftMessage}
+                            onChange={(e) => setDraftMessage(e.target.value.slice(0, 500))}
+                            placeholder="Escribe tu mensaje aquí..."
+                            rows={3}
+                            className="w-full bg-white/10 border border-yellow-500/40 text-white rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:border-yellow-400 transition-colors placeholder-white/30"
+                          />
+                          <div className="flex items-center justify-between mt-2">
+                            <span className={`text-xs ${draftMessage.length >= 500 ? 'text-red-400' : 'text-white/40'}`}>
+                              {draftMessage.length}/500
+                            </span>
+                            <button
+                              onClick={handleSaveWinnerMessage}
+                              disabled={savingMessage || !draftMessage.trim()}
+                              className="px-5 py-2 rounded-lg font-bold text-sm bg-gradient-to-r from-yellow-500 to-yellow-600 text-black disabled:opacity-50 disabled:cursor-not-allowed hover:from-yellow-400 hover:to-yellow-500 transition-all"
+                            >
+                              {savingMessage ? 'Guardando...' : 'Publicar mensaje'}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Read-only message */}
+                      {!isNewMessage && (
+                        <p className="text-white/80 text-sm leading-relaxed whitespace-pre-wrap">{item.message}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
     </div>
   );
 };

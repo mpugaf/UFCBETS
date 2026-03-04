@@ -14,6 +14,7 @@ const registerValidation = [
     .matches(/^[a-zA-Z0-9_]+$/)
     .withMessage('Username can only contain letters, numbers and underscores'),
   body('email')
+    .optional()
     .trim()
     .isEmail()
     .withMessage('Invalid email format')

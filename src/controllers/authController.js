@@ -7,16 +7,21 @@ const { generateToken } = require('../utils/jwt');
 class AuthController {
   async register(req, res) {
     try {
+      console.log('📝 Datos recibidos en registro:', req.body);
+
       // Validate input
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        console.error('❌ Errores de validación:', errors.array());
         return res.status(400).json({
           success: false,
-          errors: errors.array()
+          errors: errors.array(),
+          message: errors.array()[0].msg
         });
       }
 
       const { username, email, password, nickname, country_id, token: registrationToken } = req.body;
+      console.log('✅ Datos extraídos:', { username, email: email || 'no proporcionado', nickname, registrationToken });
 
       // Validate registration token
       if (!registrationToken) {
@@ -46,12 +51,14 @@ class AuthController {
       }
 
       // Check if user already exists
-      const existingUserByEmail = await User.findByEmail(email);
-      if (existingUserByEmail) {
-        return res.status(400).json({
-          success: false,
-          message: 'Email already registered'
-        });
+      if (email) {
+        const existingUserByEmail = await User.findByEmail(email);
+        if (existingUserByEmail) {
+          return res.status(400).json({
+            success: false,
+            message: 'Email already registered'
+          });
+        }
       }
 
       const existingUserByUsername = await User.findByUsername(username);
@@ -69,7 +76,7 @@ class AuthController {
       // Create user
       const userId = await User.create({
         username,
-        email,
+        email: email || null,
         password_hash,
         nickname: nickname || null,
         country_id: country_id || null

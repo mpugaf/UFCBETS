@@ -8,6 +8,7 @@ const router = express.Router();
 // All routes require authentication
 router.use(authMiddleware);
 
+router.get('/last-completed-event', betsController.getLastCompletedEvent);
 router.get('/events', betsController.getAllEvents);
 router.get('/available', betsController.getAvailableFights);
 router.get('/predictions/:eventId', betsController.getAllEventPredictions);

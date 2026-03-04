@@ -3,12 +3,12 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../services/api';
 
-const FightResults = () => {
+const FightResults = ({ eventId: propEventId, embedded = false }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [events, setEvents] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(propEventId || null);
   const [fights, setFights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -22,12 +22,13 @@ const FightResults = () => {
   }, [user]);
 
   useEffect(() => {
-    const eventId = searchParams.get('event_id');
+    // Priorizar propEventId sobre searchParams
+    const eventId = propEventId || searchParams.get('event_id');
     if (eventId) {
       setSelectedEvent(eventId);
       loadFights(eventId);
     }
-  }, [searchParams]);
+  }, [searchParams, propEventId]);
 
   const loadEvents = async () => {
     try {
@@ -56,7 +57,13 @@ const FightResults = () => {
 
   const handleEventChange = (eventId) => {
     setSelectedEvent(eventId);
-    navigate(`/fight-results?event_id=${eventId}`);
+    if (eventId) {
+      loadFights(eventId);
+    }
+    // Solo navegar si no estamos en modo embedded (dentro del Dashboard)
+    if (!embedded) {
+      navigate(`/fight-results?event_id=${eventId}`);
+    }
   };
 
   const handleResultSubmit = async (fightId, result_type, winner_id) => {
@@ -89,21 +96,7 @@ const FightResults = () => {
   }
 
   return (
-    <div className="min-h-screen">
-      <nav className="bg-white/10 backdrop-blur-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <span className="text-2xl font-bold text-white">🏆 Ingreso de Resultados</span>
-            <div className="flex items-center gap-4">
-              <button onClick={() => navigate('/dashboard')} className="text-white hover:text-white/80 font-medium">Dashboard</button>
-              <button onClick={() => navigate('/events')} className="text-white hover:text-white/80 font-medium">Eventos</button>
-              <button onClick={() => navigate('/maintainers')} className="text-white hover:text-white/80 font-medium">Mantenedores</button>
-              <button onClick={logout} className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium">Cerrar Sesión</button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+    <div>
       <div className="max-w-6xl mx-auto px-4 py-8">
         {message.text && (
           <div className={`mb-4 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>

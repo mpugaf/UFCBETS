@@ -289,10 +289,16 @@ class MaintainersController {
 
       // Create odds
       if (red_odds) {
-        await pool.execute('INSERT INTO betting_odds (fight_id, fighter_id, decimal_odds) VALUES (?, ?, ?)', [fight_id, fighter_red_id, red_odds]);
+        await pool.execute(
+          'INSERT INTO betting_odds (fight_id, fighter_id, outcome_type, decimal_odds) VALUES (?, ?, ?, ?)',
+          [fight_id, fighter_red_id, 'fighter', red_odds]
+        );
       }
       if (blue_odds) {
-        await pool.execute('INSERT INTO betting_odds (fight_id, fighter_id, decimal_odds) VALUES (?, ?, ?)', [fight_id, fighter_blue_id, blue_odds]);
+        await pool.execute(
+          'INSERT INTO betting_odds (fight_id, fighter_id, outcome_type, decimal_odds) VALUES (?, ?, ?, ?)',
+          [fight_id, fighter_blue_id, 'fighter', blue_odds]
+        );
       }
 
       res.status(201).json({ success: true, message: 'Fight created successfully', data: { fight_id } });
@@ -311,6 +317,9 @@ class MaintainersController {
         red_odds, blue_odds, winner_id, fight_category_id, display_order
       } = req.body;
 
+      // Convert undefined to null for SQL
+      const sanitize = (value) => value === undefined || value === '' ? null : value;
+
       const query = `
         UPDATE fact_fights
         SET event_id = ?, weight_class_id = ?, fighter_red_id = ?, fighter_blue_id = ?,
@@ -319,19 +328,25 @@ class MaintainersController {
         WHERE fight_id = ?
       `;
       await pool.execute(query, [
-        event_id, weight_class_id, fighter_red_id, fighter_blue_id,
-        scheduled_rounds, is_title_fight, is_main_event, is_co_main_event, winner_id,
-        fight_category_id, display_order,
+        sanitize(event_id), sanitize(weight_class_id), sanitize(fighter_red_id), sanitize(fighter_blue_id),
+        sanitize(scheduled_rounds), sanitize(is_title_fight), sanitize(is_main_event), sanitize(is_co_main_event),
+        sanitize(winner_id), sanitize(fight_category_id), sanitize(display_order),
         fight_id
       ]);
 
       // Update odds
       await pool.execute('DELETE FROM betting_odds WHERE fight_id = ?', [fight_id]);
-      if (red_odds) {
-        await pool.execute('INSERT INTO betting_odds (fight_id, fighter_id, decimal_odds) VALUES (?, ?, ?)', [fight_id, fighter_red_id, red_odds]);
+      if (red_odds && red_odds !== '') {
+        await pool.execute(
+          'INSERT INTO betting_odds (fight_id, fighter_id, outcome_type, decimal_odds) VALUES (?, ?, ?, ?)',
+          [fight_id, fighter_red_id, 'fighter', red_odds]
+        );
       }
-      if (blue_odds) {
-        await pool.execute('INSERT INTO betting_odds (fight_id, fighter_id, decimal_odds) VALUES (?, ?, ?)', [fight_id, fighter_blue_id, blue_odds]);
+      if (blue_odds && blue_odds !== '') {
+        await pool.execute(
+          'INSERT INTO betting_odds (fight_id, fighter_id, outcome_type, decimal_odds) VALUES (?, ?, ?, ?)',
+          [fight_id, fighter_blue_id, 'fighter', blue_odds]
+        );
       }
 
       res.json({ success: true, message: 'Fight updated successfully' });
@@ -368,6 +383,7 @@ class MaintainersController {
       `);
       const [fightResults] = await pool.execute('SELECT * FROM dim_fight_results ORDER BY result_name');
       const [fightMethods] = await pool.execute('SELECT * FROM dim_fight_methods ORDER BY method_name');
+      const [fightCategories] = await pool.execute('SELECT * FROM dim_fight_categories ORDER BY display_order');
 
       res.json({
         success: true,
@@ -378,7 +394,8 @@ class MaintainersController {
           event_types: eventTypes,
           weight_classes: weightClasses,
           fight_results: fightResults,
-          fight_methods: fightMethods
+          fight_methods: fightMethods,
+          fight_categories: fightCategories
         }
       });
     } catch (error) {

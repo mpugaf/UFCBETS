@@ -3,6 +3,59 @@ const Config = require('../models/Config');
 const FightCategory = require('../models/FightCategory');
 
 class BetsController {
+  async getLastCompletedEvent(req, res) {
+    try {
+      // Find the most recent past event that has at least one fight with a result
+      const [eventRows] = await pool.execute(`
+        SELECT e.event_id, e.event_name, e.event_date, e.venue, e.city, e.state
+        FROM dim_events e
+        JOIN fact_fights ff ON e.event_id = ff.event_id
+        WHERE e.event_date < CURDATE()
+          AND (ff.winner_id IS NOT NULL OR (ff.result_type_code IS NOT NULL AND ff.result_type_code != ''))
+        GROUP BY e.event_id
+        ORDER BY e.event_date DESC
+        LIMIT 1
+      `);
+
+      if (eventRows.length === 0) {
+        return res.json({ success: true, data: null });
+      }
+
+      const event = eventRows[0];
+
+      const [fights] = await pool.execute(`
+        SELECT
+          ff.fight_id,
+          ff.is_main_event,
+          ff.is_title_fight,
+          ff.winner_id,
+          ff.result_type_code,
+          ff.display_order,
+          fc.category_name,
+          fc.category_code,
+          fc.display_order as category_order,
+          wc.class_name as weight_class_name,
+          fr.fighter_name as red_fighter_name,
+          fb.fighter_name as blue_fighter_name,
+          fw.fighter_name as winner_name
+        FROM fact_fights ff
+        LEFT JOIN dim_fight_categories fc ON ff.fight_category_id = fc.category_id
+        LEFT JOIN dim_weight_classes wc ON ff.weight_class_id = wc.weight_class_id
+        JOIN dim_fighters fr ON ff.fighter_red_id = fr.fighter_id
+        JOIN dim_fighters fb ON ff.fighter_blue_id = fb.fighter_id
+        LEFT JOIN dim_fighters fw ON ff.winner_id = fw.fighter_id
+        WHERE ff.event_id = ?
+          AND (ff.winner_id IS NOT NULL OR (ff.result_type_code IS NOT NULL AND ff.result_type_code != ''))
+        ORDER BY fc.display_order DESC, ff.display_order DESC
+      `, [event.event_id]);
+
+      res.json({ success: true, data: { event, fights } });
+    } catch (error) {
+      console.error('Get last completed event error:', error);
+      res.status(500).json({ success: false, message: 'Error fetching last completed event' });
+    }
+  }
+
   async getAllEvents(req, res) {
     try {
       const userId = req.user.userId;
@@ -52,21 +105,15 @@ class BetsController {
 
   async getAvailableFights(req, res) {
     try {
-      console.log('=== getAvailableFights called ===');
-      console.log('Query params:', req.query);
-
       const userId = req.user.userId;
       const bettingEnabled = await Config.isBettingEnabled();
       const currentEventId = await Config.getCurrentEventId();
-      console.log('Betting enabled:', bettingEnabled);
-      console.log('Current event ID:', currentEventId);
 
       // Allow event_id from query params, otherwise use current event
-      const requestedEventId = req.query.event_id ? parseInt(req.query.event_id) : currentEventId;
-      console.log('Requested event ID:', requestedEventId);
+      // IMPORTANT: Ensure both IDs are integers for proper comparison
+      const requestedEventId = req.query.event_id ? parseInt(req.query.event_id) : (currentEventId ? parseInt(currentEventId) : null);
 
       if (!requestedEventId) {
-        console.log('No event ID, returning empty');
         return res.json({
           success: true,
           data: {
@@ -79,15 +126,12 @@ class BetsController {
       }
 
       // Get event info
-      console.log('Fetching event info...');
       const [eventRows] = await pool.execute(
         'SELECT event_id, event_name, event_date, venue, city, state FROM dim_events WHERE event_id = ?',
         [requestedEventId]
       );
-      console.log('Event rows:', eventRows.length);
 
       if (eventRows.length === 0) {
-        console.log('Event not found');
         return res.status(404).json({
           success: false,
           message: 'Evento no encontrado'
@@ -104,17 +148,8 @@ class BetsController {
       const specialDeadline = new Date('2026-01-23');
       const isSpecialEvent = event.event_date === '2025-12-06' && today <= specialDeadline;
 
-      // Check if event is in the future or today, or if it's the special event
-      const canBet = bettingEnabled && (eventDate >= today || isSpecialEvent);
-      console.log('Can bet:', canBet, 'Event date:', eventDate, 'Today:', today, 'Is special event:', isSpecialEvent);
-
-      // Get fights organized by category
-      console.log('Fetching fights by category...');
-      const categories = await FightCategory.getFightsByCategory(requestedEventId);
-      console.log('Categories found:', categories.length);
-      console.log('Total fights:', categories.reduce((sum, cat) => sum + cat.fights.length, 0));
-
-      // Get user's existing bets for this event
+      // Get user's existing bets for this event FIRST
+      // This is crucial for replay mode logic
       const [existingBets] = await pool.execute(
         `SELECT ub.bet_id, ub.fight_id, ub.predicted_winner_id, ub.bet_type,
                 ub.bet_amount, ub.odds_value, ub.potential_return, ub.created_at
@@ -123,7 +158,24 @@ class BetsController {
          WHERE ub.user_id = ? AND ff.event_id = ?`,
         [userId, requestedEventId]
       );
-      console.log('Existing bets found:', existingBets.length);
+
+      // REPLAY MODE LOGIC:
+      // If admin has enabled betting and this is the current event, allow betting ONLY if user hasn't bet yet
+      // This enables "replay mode" where admin can reopen past events for NEW users or users who haven't bet
+      // Users who already bet CANNOT bet again, even in replay mode
+      const isCurrentEvent = requestedEventId === parseInt(currentEventId);
+      const userHasAlreadyBet = existingBets.length > 0;
+
+      // User can bet if:
+      // 1. Betting is enabled globally AND
+      // 2. User hasn't bet on this event yet AND
+      // 3. (Event is future OR special event OR is current event in replay mode)
+      const canBet = bettingEnabled &&
+                     !userHasAlreadyBet &&
+                     (eventDate >= today || isSpecialEvent || isCurrentEvent);
+
+      // Get fights organized by category
+      const categories = await FightCategory.getFightsByCategory(requestedEventId);
 
       res.json({
         success: true,
@@ -134,7 +186,6 @@ class BetsController {
           existing_bets: existingBets
         }
       });
-      console.log('Response sent');
     } catch (error) {
       console.error('Get available fights error:', error);
       res.status(500).json({
@@ -452,6 +503,10 @@ class BetsController {
       const userId = req.user.userId;
       const { bets } = req.body;
 
+      console.log('=== submitAllBets called ===');
+      console.log('User ID:', userId);
+      console.log('Bets received:', JSON.stringify(bets, null, 2));
+
       if (!Array.isArray(bets) || bets.length === 0) {
         return res.status(400).json({
           success: false,
@@ -460,6 +515,8 @@ class BetsController {
       }
 
       const bettingEnabled = await Config.isBettingEnabled();
+      const currentEventId = await Config.getCurrentEventId();
+      console.log('Betting enabled:', bettingEnabled, 'Current event ID:', currentEventId);
       if (!bettingEnabled) {
         return res.status(403).json({
           success: false,
@@ -494,6 +551,8 @@ class BetsController {
       for (const bet of bets) {
         const { fight_id, bet_type, predicted_winner_id, odds_value } = bet;
 
+        console.log(`Processing bet for fight ${fight_id}:`, { bet_type, predicted_winner_id, odds_value });
+
         if (!fight_id || !bet_type || !odds_value) {
           throw new Error(`Datos de apuesta incompletos para fight_id ${fight_id}`);
         }
@@ -508,8 +567,9 @@ class BetsController {
           throw new Error(`predicted_winner_id requerido para apuesta de tipo fighter_win`);
         }
 
+        // REPLAY MODE: Allow betting on fights from the current event even if they have results
         const [fightRows] = await connection.execute(
-          'SELECT fight_id, event_id FROM fact_fights WHERE fight_id = ? AND winner_id IS NULL',
+          'SELECT fight_id, event_id, winner_id FROM fact_fights WHERE fight_id = ?',
           [fight_id]
         );
 
@@ -518,6 +578,18 @@ class BetsController {
         }
 
         const event_id = fightRows[0].event_id;
+        const hasWinner = fightRows[0].winner_id !== null;
+        const isCurrentEvent = parseInt(event_id) === parseInt(currentEventId);
+
+        console.log(`Fight ${fight_id}: event_id=${event_id}, hasWinner=${hasWinner}, isCurrentEvent=${isCurrentEvent}, currentEventId=${currentEventId}`);
+
+        // Allow betting if:
+        // 1. Fight has no winner (normal mode), OR
+        // 2. Fight belongs to current event (replay mode - allows new users to bet on past events)
+        if (hasWinner && !isCurrentEvent) {
+          throw new Error(`Las apuestas están cerradas para la pelea ${fight_id}. El evento ya finalizó.`);
+        }
+
         const bet_amount = 100;
         const potential_return = (bet_amount * odds_value).toFixed(2);
 
@@ -530,11 +602,18 @@ class BetsController {
           // No permitir modificar apuestas ya existentes
           throw new Error(`Ya tienes una apuesta registrada para la pelea ${fight_id}. No puedes modificarla.`);
         } else {
-          await connection.execute(`
-            INSERT INTO user_bets (user_id, fight_id, event_id, bet_type, predicted_winner_id, bet_amount, potential_return, odds_value)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          `, [userId, fight_id, event_id, bet_type, predicted_winner_id, bet_amount, potential_return, odds_value]);
-          results.push({ fight_id, action: 'created' });
+          console.log(`About to insert bet: userId=${userId}, fight_id=${fight_id}, event_id=${event_id}, bet_type=${bet_type}, predicted_winner_id=${predicted_winner_id}, bet_amount=${bet_amount}, potential_return=${potential_return}, odds_value=${odds_value}`);
+          try {
+            await connection.execute(`
+              INSERT INTO user_bets (user_id, fight_id, event_id, bet_type, predicted_winner_id, bet_amount, potential_return, odds_value)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            `, [userId, fight_id, event_id, bet_type, predicted_winner_id, bet_amount, potential_return, odds_value]);
+            console.log(`Bet inserted successfully for fight ${fight_id}`);
+            results.push({ fight_id, action: 'created' });
+          } catch (insertError) {
+            console.error(`INSERT ERROR for fight ${fight_id}:`, insertError);
+            throw insertError;
+          }
         }
       }
 
@@ -547,11 +626,17 @@ class BetsController {
       });
     } catch (error) {
       await connection.rollback();
-      console.error('Submit all bets error:', error);
+      console.error('=== Submit all bets ERROR ===');
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      console.error('Error code:', error.code);
+      console.error('Error errno:', error.errno);
+      console.error('Error sqlMessage:', error.sqlMessage);
       res.status(500).json({
         success: false,
         message: 'Error al procesar apuestas',
-        error: error.message
+        error: error.message,
+        sqlMessage: error.sqlMessage
       });
     } finally {
       connection.release();
@@ -586,7 +671,7 @@ class BetsController {
       );
       const fightsWithResults = fightsRows[0].total;
 
-      // Count bets to be deleted
+      // Count existing bets (for informational purposes only - NOT deleting them)
       const [betsRows] = await connection.execute(
         `SELECT COUNT(*) as total
          FROM user_bets ub
@@ -596,41 +681,33 @@ class BetsController {
       );
       const totalBets = betsRows[0].total;
 
-      // Delete all points history for this event (must be done before deleting bets)
+      // REPLAY MODE: Only delete points history and results, NOT bets
+      // This allows users who already bet to keep their bets
+      // Only users who haven't bet will be able to bet when event is re-enabled
+
+      // 1. Delete all points history for this event
       await connection.execute(
         'DELETE FROM user_points_history WHERE event_id = ?',
         [eventId]
       );
 
-      // ALWAYS reset fight results for the event
+      // 2. Reset fight results for the event (winner_id, result_type_code)
       await connection.execute(
         'UPDATE fact_fights SET winner_id = NULL, result_type_code = NULL WHERE event_id = ?',
         [eventId]
       );
 
-      // Delete all bets for the event (if any)
-      if (totalBets > 0) {
-        await connection.execute(
-          `DELETE ub FROM user_bets ub
-           JOIN fact_fights ff ON ub.fight_id = ff.fight_id
-           WHERE ff.event_id = ?`,
-          [eventId]
-        );
-      }
-
-      // Re-enable betting for all users
-      await connection.execute(
-        'UPDATE users SET can_bet = TRUE WHERE role = \'user\''
-      );
+      // 3. DO NOT delete bets - they remain intact
+      // Users who already bet cannot bet again (replay mode protection)
 
       await connection.commit();
 
       res.json({
         success: true,
-        message: `Resultados limpiados: ${fightsWithResults} peleas reiniciadas, ${totalBets} apuestas eliminadas`,
+        message: `Resultados limpiados: ${fightsWithResults} peleas reiniciadas. Las apuestas existentes (${totalBets}) se mantienen.`,
         data: {
           fights_cleared: fightsWithResults,
-          bets_deleted: totalBets
+          existing_bets: totalBets
         }
       });
     } catch (error) {

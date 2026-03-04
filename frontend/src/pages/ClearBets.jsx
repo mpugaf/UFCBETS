@@ -71,21 +71,7 @@ const ClearBets = () => {
   }
 
   return (
-    <div className="min-h-screen">
-      <nav className="bg-white/10 backdrop-blur-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <span className="text-2xl font-bold text-white">🧹 Limpiar Resultados</span>
-            <div className="flex items-center gap-4">
-              <button onClick={() => navigate('/dashboard')} className="text-white hover:text-white/80 font-medium">Dashboard</button>
-              <button onClick={() => navigate('/maintainers')} className="text-white hover:text-white/80 font-medium">Mantenedores</button>
-              <button onClick={() => navigate('/fight-results')} className="text-white hover:text-white/80 font-medium">Resultados</button>
-              <button onClick={logout} className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium">Cerrar Sesión</button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+    <div>
       <div className="max-w-6xl mx-auto px-4 py-8">
         {message.text && (
           <div className={`mb-4 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
@@ -99,11 +85,13 @@ const ClearBets = () => {
             Esta herramienta permite limpiar los resultados de las peleas de un evento para poder realizar pruebas de apuestas nuevamente.
           </p>
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
-            <p className="text-yellow-700 font-semibold">⚠️ Advertencia:</p>
+            <p className="text-yellow-700 font-semibold">⚠️ Cómo funciona:</p>
             <ul className="list-disc list-inside text-yellow-700 text-sm mt-2">
-              <li>Esto eliminará todos los resultados (winner_id, result_type_code)</li>
-              <li>Todas las apuestas volverán al estado "pending"</li>
-              <li>Los usuarios podrán volver a apostar si las apuestas están abiertas</li>
+              <li>Esto limpiará los RESULTADOS del evento (winner_id, result_type_code)</li>
+              <li>Las APUESTAS de usuarios NO se borran, se mantienen intactas</li>
+              <li>Las apuestas volverán al estado "pending"</li>
+              <li><strong>Solo usuarios SIN apuestas</strong> podrán apostar si reactivas el evento</li>
+              <li>Usuarios que ya apostaron NO pueden volver a apostar (modo replay)</li>
             </ul>
           </div>
         </div>

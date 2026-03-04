@@ -3,10 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
-const AdminPanel = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('create');
+const AdminPanel = ({ onClose }) => {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
@@ -55,88 +53,30 @@ const AdminPanel = () => {
   };
 
   if (user?.role !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white text-center">
-          <h1 className="text-4xl font-bold mb-4">Acceso Denegado</h1>
-          <p className="mb-4">No tienes permisos para acceder a esta página</p>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="bg-white text-purple-600 px-6 py-2 rounded-lg font-semibold"
-          >
-            Volver al Dashboard
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="min-h-screen">
-      {/* Header */}
-      <nav className="bg-white/10 backdrop-blur-lg border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-4">
-              <span className="text-2xl font-bold text-white">🥊 Panel Admin</span>
-              <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-sm font-bold">
-                ADMIN
-              </span>
-            </div>
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="text-white hover:text-white/80 font-medium transition"
-              >
-                Dashboard
-              </button>
-              <button
-                onClick={() => navigate('/maintainers')}
-                className="text-white hover:text-white/80 font-medium transition"
-              >
-                Mantenedores
-              </button>
-              <button
-                onClick={() => navigate('/invitations')}
-                className="text-white hover:text-white/80 font-medium transition"
-              >
-                Invitaciones
-              </button>
-              <div className="text-white text-right">
-                <p className="font-semibold">{user?.username}</p>
-                <p className="text-sm text-white/70">{user?.role}</p>
-              </div>
-              <button
-                onClick={logout}
-                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-all"
-              >
-                Cerrar Sesión
-              </button>
-            </div>
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header del Modal */}
+        <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-t-2xl flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold">🥊 Panel Admin</h2>
+            <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-bold">
+              ADMIN
+            </span>
           </div>
+          <button
+            onClick={onClose}
+            className="text-white/80 hover:text-white text-2xl font-bold transition-colors"
+          >
+            ✕
+          </button>
         </div>
-      </nav>
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl p-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">
-            Panel de Administración
-          </h1>
-
-          {/* Tabs */}
-          <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setActiveTab('create')}
-              className={`flex-1 py-2 px-4 rounded-md font-semibold transition-all ${
-                activeTab === 'create'
-                  ? 'bg-white text-purple-600 shadow-md'
-                  : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              Crear Usuario
-            </button>
-          </div>
+        {/* Contenido del Modal */}
+        <div className="p-6">
 
           {message.text && (
             <div
@@ -151,8 +91,7 @@ const AdminPanel = () => {
           )}
 
           {/* Create User Form */}
-          {activeTab === 'create' && (
-            <form onSubmit={handleCreateUser} className="space-y-4">
+          <form onSubmit={handleCreateUser} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Usuario
@@ -225,20 +164,18 @@ const AdminPanel = () => {
                 {loading ? 'Creando usuario...' : 'Crear Usuario'}
               </button>
             </form>
-          )}
-        </div>
 
-        {/* Info Card */}
-        <div className="mt-6 bg-gradient-to-r from-purple-500/20 to-indigo-500/20 backdrop-blur-lg rounded-xl shadow-lg p-6 border border-white/30">
-          <h3 className="text-lg font-bold text-white mb-2">
-            ℹ️ Información
-          </h3>
-          <ul className="space-y-1 text-white/90 text-sm">
-            <li>• Solo los administradores pueden crear nuevos usuarios</li>
-            <li>• Los usuarios creados recibirán sus credenciales por email (próximamente)</li>
-            <li>• Las contraseñas deben tener al menos 6 caracteres</li>
-            <li>• El registro público está deshabilitado por seguridad</li>
-          </ul>
+          {/* Info Card */}
+          <div className="mt-6 bg-purple-50 rounded-lg p-4 border border-purple-200">
+            <h3 className="text-sm font-bold text-purple-900 mb-2">
+              ℹ️ Información
+            </h3>
+            <ul className="space-y-1 text-purple-800 text-xs">
+              <li>• Solo los administradores pueden crear nuevos usuarios</li>
+              <li>• Las contraseñas deben tener al menos 6 caracteres</li>
+              <li>• El registro público está deshabilitado por seguridad</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>

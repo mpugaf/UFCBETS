@@ -1,0 +1,10 @@
+CREATE TABLE event_winner_messages (
+    message_id INT AUTO_INCREMENT PRIMARY KEY,
+    event_id   INT NOT NULL UNIQUE,
+    user_id    INT NOT NULL,
+    message    VARCHAR(500) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (event_id) REFERENCES dim_events(event_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id)  REFERENCES users(user_id) ON DELETE CASCADE
+);
