@@ -5,7 +5,7 @@ package-lock.json
 # Environment variables
 .env
 .env.*
-.env.example
+!.env.example
 
 # Logs
 *.log
@@ -30,6 +30,13 @@ uploads/**/*
 !uploads/**/README.md
 !uploads/
 !uploads/fighters/
+
+# Migraciones (historial interno ya aplicado - usar schema.sql para setup)
+migrations/
+
+# Archivos de instrucciones internas de Claude
+CLAUDE.MD
+CLAUDE.md
 
 # Archivos de despliegue y configuración
 PLAN_DESPLIEGUE.txt
