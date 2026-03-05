@@ -329,6 +329,7 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     country_id INT,
     total_points INT DEFAULT 0,
+    is_active BOOLEAN DEFAULT TRUE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (country_id) REFERENCES dim_countries(country_id)
 );

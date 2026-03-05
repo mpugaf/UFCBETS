@@ -325,9 +325,14 @@ const Leaderboard = () => {
                               {(entry.nickname || entry.username).charAt(0).toUpperCase()}
                             </div>
                             <div>
-                              <div className="text-sm font-bold text-white">
+                              <div className="text-sm font-bold text-white flex items-center gap-2 flex-wrap">
                                 {entry.nickname || entry.username}
-                                {isCurrentUser && <span className="ml-2 text-yellow-400 text-xs">(Tú)</span>}
+                                {isCurrentUser && <span className="text-yellow-400 text-xs">(Tú)</span>}
+                                {user?.role === 'admin' && !entry.is_active && (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-600/80 text-gray-300 border border-gray-500/50 leading-none">
+                                    deshabilitado
+                                  </span>
+                                )}
                               </div>
                               {entry.nickname && (
                                 <div className="text-xs text-white/40">@{entry.username}</div>

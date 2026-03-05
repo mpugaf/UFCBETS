@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 
 const UsersManagement = () => {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,12 +26,38 @@ const UsersManagement = () => {
     }
   };
 
+  const toggleUserStatus = async (userId, currentStatus) => {
+    const action = currentStatus ? 'deshabilitar' : 'habilitar';
+    if (!confirm(`¿Estás seguro de que quieres ${action} esta cuenta?`)) return;
+
+    try {
+      const newStatus = !currentStatus;
+      await api.patch(`/users/${userId}/toggle-status`, { is_active: newStatus });
+
+      setUsers(users.map(u =>
+        u.user_id === userId ? { ...u, is_active: newStatus } : u
+      ));
+
+      setMessage({
+        type: 'success',
+        text: `Cuenta ${newStatus ? 'habilitada' : 'deshabilitada'} correctamente`
+      });
+
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      setMessage({
+        type: 'error',
+        text: error.response?.data?.message || 'Error al modificar estado del usuario'
+      });
+    }
+  };
+
   const toggleUserBetting = async (userId, currentStatus) => {
     try {
       const newStatus = !currentStatus;
       await api.patch(`/users/${userId}/toggle-betting`, { can_bet: newStatus });
 
-      // Update local state
       setUsers(users.map(u =>
         u.user_id === userId ? { ...u, can_bet: newStatus } : u
       ));
@@ -59,7 +85,6 @@ const UsersManagement = () => {
     try {
       await api.post('/users/reset-all-betting');
 
-      // Update local state
       setUsers(users.map(u =>
         u.role === 'user' ? { ...u, can_bet: true } : u
       ));
@@ -111,7 +136,7 @@ const UsersManagement = () => {
 
         <div className="bg-white rounded-2xl shadow-2xl p-6 mb-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Permisos de Apuestas</h2>
+            <h2 className="text-2xl font-bold text-gray-800">Gestionar Usuarios</h2>
             <button
               onClick={resetAllBetting}
               className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition-colors"
@@ -131,13 +156,14 @@ const UsersManagement = () => {
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Total Apuestas</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Acertadas</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Puntos</th>
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Estado</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Puede Apostar</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u.user_id} className="border-b hover:bg-gray-50">
+                  <tr key={u.user_id} className={`border-b transition-colors ${!u.is_active ? 'bg-gray-50 opacity-70' : 'hover:bg-gray-50'}`}>
                     <td className="px-4 py-3 text-sm text-gray-900">{u.username}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{u.nickname || '-'}</td>
                     <td className="px-4 py-3 text-sm text-gray-600">{u.email || '-'}</td>
@@ -151,6 +177,19 @@ const UsersManagement = () => {
                     <td className="px-4 py-3 text-sm text-center text-gray-900">{u.total_bets}</td>
                     <td className="px-4 py-3 text-sm text-center text-gray-900">{u.correct_bets}</td>
                     <td className="px-4 py-3 text-sm text-center font-semibold text-gray-900">{u.total_points}</td>
+                    {/* Estado de la cuenta */}
+                    <td className="px-4 py-3 text-center">
+                      {u.is_active ? (
+                        <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
+                          Activo
+                        </span>
+                      ) : (
+                        <span className="inline-block px-3 py-1 bg-gray-200 text-gray-600 rounded-full text-xs font-semibold">
+                          Deshabilitado
+                        </span>
+                      )}
+                    </td>
+                    {/* Puede apostar */}
                     <td className="px-4 py-3 text-center">
                       {u.can_bet ? (
                         <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
@@ -162,18 +201,32 @@ const UsersManagement = () => {
                         </span>
                       )}
                     </td>
+                    {/* Acciones */}
                     <td className="px-4 py-3 text-center">
                       {u.role === 'user' && (
-                        <button
-                          onClick={() => toggleUserBetting(u.user_id, u.can_bet)}
-                          className={`px-4 py-2 rounded-lg font-semibold text-white transition-colors ${
-                            u.can_bet
-                              ? 'bg-red-600 hover:bg-red-700'
-                              : 'bg-green-600 hover:bg-green-700'
-                          }`}
-                        >
-                          {u.can_bet ? 'Deshabilitar' : 'Habilitar'}
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => toggleUserBetting(u.user_id, u.can_bet)}
+                            disabled={!u.is_active}
+                            className={`px-3 py-1.5 rounded-lg font-semibold text-white text-xs transition-colors ${
+                              u.can_bet
+                                ? 'bg-red-600 hover:bg-red-700'
+                                : 'bg-green-600 hover:bg-green-700'
+                            } disabled:opacity-40 disabled:cursor-not-allowed`}
+                          >
+                            {u.can_bet ? 'Quitar apuesta' : 'Dar apuesta'}
+                          </button>
+                          <button
+                            onClick={() => toggleUserStatus(u.user_id, u.is_active)}
+                            className={`px-3 py-1.5 rounded-lg font-semibold text-white text-xs transition-colors ${
+                              u.is_active
+                                ? 'bg-gray-500 hover:bg-gray-600'
+                                : 'bg-blue-600 hover:bg-blue-700'
+                            }`}
+                          >
+                            {u.is_active ? 'Deshabilitar' : 'Habilitar'}
+                          </button>
+                        </div>
                       )}
                       {u.role === 'admin' && (
                         <span className="text-gray-400 text-sm">Admin</span>

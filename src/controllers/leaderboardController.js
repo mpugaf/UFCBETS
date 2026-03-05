@@ -20,12 +20,15 @@ const leaderboardController = {
         });
       }
 
+      const isAdmin = req.user?.role === 'admin';
+
       // Get leaderboard for this specific event only
       const [rows] = await pool.execute(
         `SELECT
           u.user_id,
           u.username,
           u.nickname,
+          u.is_active,
           COUNT(ub.bet_id) as total_bets,
           SUM(CASE WHEN ub.status = 'won' THEN 1 ELSE 0 END) as correct_bets,
           SUM(CASE WHEN ub.status = 'lost' THEN 1 ELSE 0 END) as incorrect_bets,
@@ -40,8 +43,8 @@ const leaderboardController = {
         FROM users u
         LEFT JOIN user_bets ub ON u.user_id = ub.user_id AND ub.event_id = ?
         LEFT JOIN user_points_history uph ON ub.bet_id = uph.bet_id
-        WHERE u.role = 'user'
-        GROUP BY u.user_id, u.username, u.nickname, u.created_at
+        WHERE u.role = 'user'${isAdmin ? '' : ' AND u.is_active = TRUE'}
+        GROUP BY u.user_id, u.username, u.nickname, u.is_active, u.created_at
         ORDER BY total_points DESC, u.created_at ASC`,
         [eId]
       );
@@ -99,12 +102,15 @@ const leaderboardController = {
         dateCondition = `YEAR(e.event_date) = ${parseInt(year)}`;
       }
 
+      const isAdmin = req.user?.role === 'admin';
+
       // Get leaderboard for the year using user_points_history
       const [rows] = await pool.execute(
         `SELECT
           u.user_id,
           u.username,
           u.nickname,
+          u.is_active,
           COUNT(DISTINCT e.event_id) as events_participated,
           COUNT(ub.bet_id) as total_bets,
           SUM(CASE WHEN ub.status = 'won' THEN 1 ELSE 0 END) as correct_bets,
@@ -128,8 +134,8 @@ const leaderboardController = {
         LEFT JOIN fact_fights ff ON ub.fight_id = ff.fight_id
         LEFT JOIN dim_events e ON ff.event_id = e.event_id AND (${dateCondition})
         LEFT JOIN user_points_history uph ON ub.bet_id = uph.bet_id
-        WHERE u.role = 'user'
-        GROUP BY u.user_id, u.username, u.nickname, u.created_at
+        WHERE u.role = 'user'${isAdmin ? '' : ' AND u.is_active = TRUE'}
+        GROUP BY u.user_id, u.username, u.nickname, u.is_active, u.created_at
         ORDER BY total_points DESC, u.created_at ASC`
       );
 
@@ -214,7 +220,7 @@ const leaderboardController = {
           LEFT JOIN fact_fights ff ON ub.fight_id = ff.fight_id
           LEFT JOIN dim_events e ON ff.event_id = e.event_id AND (${dateCondition})
           LEFT JOIN user_points_history uph ON ub.bet_id = uph.bet_id
-          WHERE u.role = 'user'
+          WHERE u.role = 'user' AND u.is_active = TRUE
           GROUP BY u.user_id, u.username, u.created_at
         ) as rankings
         WHERE user_id = ?`,

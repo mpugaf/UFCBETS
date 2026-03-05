@@ -12,6 +12,9 @@ router.get('/', usersController.getAllUsers);
 // Toggle betting permission for a specific user
 router.patch('/:userId/toggle-betting', usersController.toggleUserBetting);
 
+// Toggle active status (enable/disable account) for a specific user
+router.patch('/:userId/toggle-status', usersController.toggleUserStatus);
+
 // Reset betting for all users
 router.post('/reset-all-betting', usersController.resetAllUsersBetting);
 

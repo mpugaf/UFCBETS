@@ -12,6 +12,7 @@ class UsersController {
           u.email,
           u.role,
           u.can_bet,
+          u.is_active,
           u.created_at,
           c.country_name,
           COUNT(DISTINCT ub.bet_id) as total_bets,
@@ -68,6 +69,39 @@ class UsersController {
       res.status(500).json({
         success: false,
         message: 'Error al modificar permisos de apuestas',
+        error: error.message
+      });
+    }
+  }
+
+  // Toggle user active status (enable/disable account)
+  async toggleUserStatus(req, res) {
+    try {
+      const { userId } = req.params;
+      const { is_active } = req.body;
+
+      if (typeof is_active !== 'boolean') {
+        return res.status(400).json({
+          success: false,
+          message: 'El campo is_active debe ser un booleano'
+        });
+      }
+
+      await pool.execute(
+        'UPDATE users SET is_active = ? WHERE user_id = ?',
+        [is_active, userId]
+      );
+
+      res.json({
+        success: true,
+        message: `Cuenta ${is_active ? 'habilitada' : 'deshabilitada'} correctamente`,
+        data: { user_id: userId, is_active }
+      });
+    } catch (error) {
+      console.error('Toggle user status error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al modificar estado del usuario',
         error: error.message
       });
     }

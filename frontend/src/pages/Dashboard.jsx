@@ -595,30 +595,27 @@ const Dashboard = () => {
       </div>
 
       {/* Menu de pestañas */}
-      <div className="bg-black/50 backdrop-blur-lg border-b border-white/10 sticky top-20 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex gap-2 overflow-x-auto py-4 scrollbar-hide">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`
-                  flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium whitespace-nowrap min-h-[44px]
-                  transition-all duration-300 relative overflow-hidden group
-                  ${activeTab === tab.id
-                    ? 'bg-gradient-to-r from-red-600 to-red-700 text-white shadow-lg shadow-red-900/50 scale-105'
-                    : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white hover:scale-105'
-                  }
-                `}
-              >
-                <span className="relative z-10 text-lg leading-none">{tab.icon}</span>
-                <span className="relative z-10 text-sm leading-none">{tab.label}</span>
-                {activeTab === tab.id && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shine"></div>
-                )}
-              </button>
-            ))}
-          </div>
+      <div className="bg-black/50 backdrop-blur-lg border-b border-white/10 sticky top-20 z-40 w-full">
+        <div className="flex flex-col sm:flex-row w-full">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`
+                flex items-center justify-center px-4 py-3 font-semibold text-sm tracking-wide
+                transition-all duration-200 relative overflow-hidden flex-1
+                ${activeTab === tab.id
+                  ? 'bg-red-600 text-white border-b-2 border-red-400 sm:border-b-4'
+                  : 'text-white/60 hover:bg-white/10 hover:text-white border-b-2 border-transparent'
+                }
+              `}
+            >
+              <span className="relative z-10">{tab.label}</span>
+              {activeTab === tab.id && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shine"></div>
+              )}
+            </button>
+          ))}
         </div>
       </div>
 

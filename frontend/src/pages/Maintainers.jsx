@@ -134,6 +134,20 @@ const Maintainers = () => {
     }
   };
 
+  const handleToggleUserStatus = async (userId, currentStatus) => {
+    setLoading(true);
+    try {
+      const newStatus = !currentStatus;
+      await api.patch(`/maintainers/users/${userId}/toggle-status`, { is_active: newStatus });
+      setUsers(users.map(u => u.user_id === userId ? { ...u, is_active: newStatus } : u));
+      setMessage({ type: 'success', text: `Cuenta ${newStatus ? 'habilitada' : 'deshabilitada'} correctamente` });
+    } catch (error) {
+      setMessage({ type: 'error', text: error.response?.data?.message || 'Error al modificar estado del usuario' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteUser = async (userId, username) => {
     if (confirmingDeleteUser !== userId) {
       setConfirmingDeleteUser(userId);
@@ -925,18 +939,18 @@ const Maintainers = () => {
               ) : (
                 <div className="space-y-2">
                   {users.map((user) => (
-                    <div key={user.user_id} className="bg-gray-50 rounded-lg p-4 flex items-center justify-between hover:bg-gray-100 transition-colors">
+                    <div key={user.user_id} className={`rounded-lg p-4 flex items-center justify-between transition-colors ${user.is_active ? 'bg-gray-50 hover:bg-gray-100' : 'bg-gray-100 opacity-60'}`}>
                       <div className="flex-1">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${user.is_active ? 'bg-purple-600' : 'bg-gray-400'}`}>
                             {user.username.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-semibold text-gray-800">
+                            <p className="font-semibold text-gray-800 flex items-center gap-2 flex-wrap">
                               {user.nickname || user.username}
-                              {user.role === 'admin' && (
-                                <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full font-semibold">
-                                  ADMIN
+                              {!user.is_active && (
+                                <span className="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full font-semibold">
+                                  deshabilitado
                                 </span>
                               )}
                             </p>
@@ -957,18 +971,31 @@ const Maintainers = () => {
                         </div>
                         {user.role !== 'admin' && (
                           <div className="flex flex-col gap-1">
+                            {/* Botón deshabilitar/habilitar cuenta */}
+                            <button
+                              onClick={() => handleToggleUserStatus(user.user_id, user.is_active)}
+                              disabled={loading}
+                              className={`px-3 py-1.5 rounded-lg text-sm font-semibold text-white disabled:opacity-50 transition-colors ${
+                                user.is_active
+                                  ? 'bg-gray-500 hover:bg-gray-600'
+                                  : 'bg-blue-600 hover:bg-blue-700'
+                              }`}
+                            >
+                              {user.is_active ? 'Deshabilitar' : 'Habilitar'}
+                            </button>
+                            {/* Botón eliminar con confirmación */}
                             {confirmingDeleteUser === user.user_id ? (
                               <>
                                 <button
                                   onClick={() => handleDeleteUser(user.user_id, user.username)}
                                   disabled={loading}
-                                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
+                                  className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
                                 >
                                   ✓ Confirmar
                                 </button>
                                 <button
                                   onClick={() => setConfirmingDeleteUser(null)}
-                                  className="px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg text-sm font-semibold"
+                                  className="px-3 py-1.5 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-lg text-sm font-semibold"
                                 >
                                   Cancelar
                                 </button>
@@ -977,7 +1004,7 @@ const Maintainers = () => {
                               <button
                                 onClick={() => handleDeleteUser(user.user_id, user.username)}
                                 disabled={loading}
-                                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
+                                className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
                               >
                                 🗑️ Eliminar
                               </button>

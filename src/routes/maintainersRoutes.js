@@ -31,6 +31,7 @@ router.get('/catalogs', maintainersController.getCatalogs);
 
 // Users
 router.get('/users', maintainersController.getUsers);
+router.patch('/users/:user_id/toggle-status', maintainersController.toggleUserStatus);
 router.delete('/users/:user_id', maintainersController.deleteUser);
 
 // Clear user bets

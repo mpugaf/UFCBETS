@@ -155,6 +155,14 @@ class AuthController {
         });
       }
 
+      // Check if account is active
+      if (!user.is_active) {
+        return res.status(403).json({
+          success: false,
+          message: 'Cuenta deshabilitada. Contacta al administrador.'
+        });
+      }
+
       // Generate JWT token
       const token = generateToken({
         userId: user.user_id,

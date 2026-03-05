@@ -408,15 +408,38 @@ class MaintainersController {
   async getUsers(req, res) {
     try {
       const [users] = await pool.execute(`
-        SELECT user_id, username, nickname, role, can_bet, created_at
-        FROM users
-        WHERE role = 'user'
-        ORDER BY username
+        SELECT u.user_id, u.username, u.nickname, u.role, u.can_bet, u.is_active, u.created_at,
+               COALESCE((SELECT SUM(points_earned) FROM user_points_history WHERE user_id = u.user_id), 0) as total_points
+        FROM users u
+        WHERE u.role = 'user'
+        ORDER BY u.username
       `);
       res.json({ success: true, data: users });
     } catch (error) {
       console.error('Get users error:', error);
       res.status(500).json({ success: false, message: 'Error fetching users', error: error.message });
+    }
+  }
+
+  async toggleUserStatus(req, res) {
+    try {
+      const { user_id } = req.params;
+      const { is_active } = req.body;
+
+      if (typeof is_active !== 'boolean') {
+        return res.status(400).json({ success: false, message: 'El campo is_active debe ser un booleano' });
+      }
+
+      await pool.execute('UPDATE users SET is_active = ? WHERE user_id = ?', [is_active, user_id]);
+
+      res.json({
+        success: true,
+        message: `Cuenta ${is_active ? 'habilitada' : 'deshabilitada'} correctamente`,
+        data: { user_id, is_active }
+      });
+    } catch (error) {
+      console.error('Toggle user status error:', error);
+      res.status(500).json({ success: false, message: 'Error al modificar estado del usuario', error: error.message });
     }
   }
 
