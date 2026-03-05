@@ -602,18 +602,20 @@ const Dashboard = () => {
       </div>
 
       {/* Menu de pestañas */}
-      <div className="bg-black/50 backdrop-blur-lg border-b border-white/10 sticky top-20 z-40 w-full">
-        <div className="flex flex-col sm:flex-row w-full">
-          {tabs.map((tab) => (
+      <div className="bg-black/50 backdrop-blur-lg border-b border-white/10 sticky top-20 z-40 w-full overflow-x-auto scrollbar-none">
+        <div className="flex flex-row" style={{ minWidth: 'max-content', width: '100%' }}>
+          {tabs.map((tab, idx) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              style={{ flex: '1 1 0', minWidth: '90px' }}
               className={`
-                flex items-center justify-center px-4 py-3 font-semibold text-sm tracking-wide
-                transition-all duration-200 relative overflow-hidden flex-1
+                flex items-center justify-center px-4 py-3.5 font-semibold text-sm tracking-wide
+                transition-all duration-200 relative overflow-hidden whitespace-nowrap
+                ${idx < tabs.length - 1 ? 'border-r border-white/20' : ''}
                 ${activeTab === tab.id
-                  ? 'bg-red-600 text-white border-b-2 border-red-400 sm:border-b-4'
-                  : 'text-white/60 hover:bg-white/10 hover:text-white border-b-2 border-transparent'
+                  ? 'bg-red-700 text-white border-b-4 border-b-red-400 shadow-[inset_0_-2px_8px_rgba(255,255,255,0.1)]'
+                  : 'text-white/60 hover:bg-white/10 hover:text-white border-b-4 border-b-transparent'
                 }
               `}
             >
@@ -842,8 +844,8 @@ const Dashboard = () => {
                   <h3 className="text-red-400 font-bold text-base uppercase tracking-wide mb-2">MMA METAL AND GORE BETS</h3>
                   <p>
                     Bienvenido al sistema de predicciones UFC, para MMA Metal and Gore, un sistema de entretenimiento para fanáticos de las MMA.
-                    No se utiliza dinero real, todo es virtual y competitivo entre la comunidad y demostrar quien sabe más.
-                    El objetivo es demostrar quién es ek más conocedor, para predecir los resultados de cada pelea.
+                    Sin dinero real, todo es competitivo entre la comunidad y demostrar quien sabe más.
+                    El objetivo es demostrar quién es el más conocedor, para predecir los resultados de cada pelea.
                   </p>
                 </section>
 
@@ -872,8 +874,8 @@ const Dashboard = () => {
                   <p>
                     El usuario con más puntos al finalizar el evento puede publicar un mensaje especial
                     que quedará visible para todos en la sección <strong className="text-yellow-400">Clasificación</strong>.
-                    Es tu momento de gloria — úsalo con sabiduría (o con provocación). El criterio es en base a dos filtros,
-                    puntos, y en caso de empate, el usuario que se haya creado antes tendrá prioridad.
+                    Es tu momento de gloria — úsalo con sabiduría (o con provocación). El criterio es en base a dos filtros:
+                    Puntos, y en caso de empate, el usuario que se haya creado antes tendrá prioridad.
                   </p>
                 </section>
 
