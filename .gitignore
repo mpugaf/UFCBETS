@@ -32,7 +32,6 @@ uploads/**/*
 !uploads/**/.gitkeep
 !uploads/**/README.md
 !uploads/
-!uploads/fighters/
 
 # Migraciones (historial interno ya aplicado - usar schema.sql para setup)
 migrations/
