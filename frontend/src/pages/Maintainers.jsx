@@ -981,6 +981,12 @@ const Maintainers = () => {
                             {user.can_bet ? 'Sí' : 'No'}
                           </p>
                         </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-600">Registro</p>
+                          <p className="text-sm font-semibold text-gray-700 whitespace-nowrap">
+                            {new Date(user.created_at).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        </div>
                         {user.role !== 'admin' && (
                           <div className="flex flex-col gap-1">
                             {/* Botón deshabilitar/habilitar cuenta */}
