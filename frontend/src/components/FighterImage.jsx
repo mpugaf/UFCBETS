@@ -9,7 +9,7 @@ const FighterImage = ({ imagePath, fighterName, size = 'md' }) => {
   };
 
   const imageUrl = imagePath
-    ? `import.meta.env.VITE_API_URL/uploads/fighters/${imagePath}`
+    ? `${import.meta.env.VITE_API_URL}/uploads/fighters/${imagePath}`
     : null;
 
   return (
