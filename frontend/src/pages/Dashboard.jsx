@@ -35,6 +35,7 @@ const Dashboard = () => {
   const [myBetsEventId, setMyBetsEventId] = useState(null);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [lastEvent, setLastEvent] = useState(null);
+  const [showInstructionsModal, setShowInstructionsModal] = useState(false);
   const currentYear = new Date().getFullYear();
 
   // Función para recargar stats del usuario
@@ -510,6 +511,12 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowInstructionsModal(true)}
+                className="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 px-3 py-2 rounded-md text-sm font-bold transition-all duration-200 border border-yellow-500/40 tracking-wide"
+              >
+                INSTRUCCIONES
+              </button>
               {user?.role === 'admin' && (
                 <button
                   onClick={() => setShowAdminPanel(true)}
@@ -790,6 +797,118 @@ const Dashboard = () => {
       {/* Admin Panel Modal */}
       {showAdminPanel && (
         <AdminPanel onClose={() => setShowAdminPanel(false)} />
+      )}
+
+      {/* Instructions Modal */}
+      {showInstructionsModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+          onClick={() => setShowInstructionsModal(false)}
+        >
+          <div
+            className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl shadow-2xl border border-red-500/40"
+            style={{ backgroundColor: '#0a0a0a' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* UFC logo as transparent background */}
+            <div
+              className="absolute inset-0 rounded-2xl"
+              style={{
+                backgroundImage: 'url(/images/logo/ufclogo.jpeg)',
+                backgroundSize: 'contain',
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: 'center',
+                opacity: 0.06,
+              }}
+            />
+
+            {/* Content */}
+            <div className="relative z-10 p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-black text-white tracking-widest uppercase">
+                  Instrucciones
+                </h2>
+                <button
+                  onClick={() => setShowInstructionsModal(false)}
+                  className="text-white/50 hover:text-white text-2xl leading-none transition-colors"
+                >
+                  &times;
+                </button>
+              </div>
+
+              <div className="space-y-5 text-white/85 text-sm leading-relaxed">
+                <section>
+                  <h3 className="text-red-400 font-bold text-base uppercase tracking-wide mb-2">MMA METAL AND GORE BETS</h3>
+                  <p>
+                    Bienvenido al sistema de predicciones UFC, para MMA Metal and Gore, un sistema de entretenimiento para fanáticos de las MMA.
+                    No se utiliza dinero real, todo es virtual y competitivo entre la comunidad y demostrar quien sabe más.
+                    El objetivo es demostrar quién es ek más conocedor, para predecir los resultados de cada pelea.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 className="text-red-400 font-bold text-base uppercase tracking-wide mb-2">¿Cómo funciona cada apuesta?</h3>
+                  <p>
+                    Por cada pelea del evento activo recibes <strong className="text-yellow-400">100 dólares virtuales</strong> para apostar.
+                    Si aciertas al ganador, tus puntos se multiplican por la cuota (odd) asignada a ese peleador.
+                    Si fallas, pierdes los puntos que apostaste. Una de las claves es si apuestas a un underdog y aciertas, tu cuota será mayor.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 className="text-red-400 font-bold text-base uppercase tracking-wide mb-2">¿Cuándo puedo apostar?</h3>
+                  <p>
+                    Las apuestas se abren cuando el próximo evento está previo a comenzar, y se cierran antes del inicio
+                    del primer combate en la lista de apuestas. El banner en la parte superior de la pantalla te indica si las apuestas
+                    están <strong className="text-green-400">abiertas</strong> o <strong className="text-red-400">cerradas</strong>.
+                    Una vez cerradas, no puedes modificar ni agregar predicciones. Además, al realizar las apuestas de un evento, estas no pueden ser modificadas, aunque
+                    las apuestas sigan habilitadas, por lo cual es bueno confirmar antes de hacer las apuestas del evento respectivo.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 className="text-red-400 font-bold text-base uppercase tracking-wide mb-2">¿Qué gana el ganador de cada evento?</h3>
+                  <p>
+                    El usuario con más puntos al finalizar el evento puede publicar un mensaje especial
+                    que quedará visible para todos en la sección <strong className="text-yellow-400">Clasificación</strong>.
+                    Es tu momento de gloria — úsalo con sabiduría (o con provocación). El criterio es en base a dos filtros,
+                    puntos, y en caso de empate, el usuario que se haya creado antes tendrá prioridad.
+                  </p>
+                </section>
+
+                <section>
+                  <h3 className="text-red-400 font-bold text-base uppercase tracking-wide mb-2">Acceso al sistema</h3>
+                  <p>
+                    El registro no es público. Para participar necesitas un enlace de invitación único.
+                    Las sesiones están protegidas con JWT — si cierras sesión necesitarás tu contraseña para volver a ingresar.
+                    Puedes cambiar tu contraseña en cualquier momento desde el ícono de usuario (arriba a la derecha).
+                  </p>
+                </section>
+
+                <section>
+                  <h3 className="text-red-400 font-bold text-base uppercase tracking-wide mb-2">Secciones disponibles</h3>
+                  <ul className="space-y-1 pl-4">
+                    <li><span className="text-yellow-400 font-semibold">Inicio</span> — Resumen de tu posición y estado del evento activo.</li>
+                    <li><span className="text-yellow-400 font-semibold">Eventos</span> — Listado de todos los eventos con sus peleas.</li>
+                    <li><span className="text-yellow-400 font-semibold">Apuestas</span> — Realiza tus predicciones para el evento activo.</li>
+                    <li><span className="text-yellow-400 font-semibold">Mis Apuestas</span> — Historial de todas tus predicciones.</li>
+                    <li><span className="text-yellow-400 font-semibold">Clasificación</span> — Ranking general por evento y por año.</li>
+                  </ul>
+                </section>
+              </div>
+
+              <div className="mt-8 text-center">
+                <button
+                  onClick={() => setShowInstructionsModal(false)}
+                  className="bg-red-600 hover:bg-red-700 text-white px-8 py-2 rounded-lg font-bold transition-colors"
+                >
+                  Entendido
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

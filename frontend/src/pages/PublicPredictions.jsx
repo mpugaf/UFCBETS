@@ -7,7 +7,6 @@ const PublicPredictions = ({ eventId: propEventId }) => {
   const { user } = useAuth();
   const [predictions, setPredictions] = useState({ categories: [] });
   const [users, setUsers] = useState([]);
-  const [allUsers, setAllUsers] = useState([]);
   const [events, setEvents] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(propEventId || '');
@@ -31,8 +30,6 @@ const PublicPredictions = ({ eventId: propEventId }) => {
     try {
       const res = await api.get('/bets/events');
       setEvents(res.data.data);
-      const usersRes = await api.get('/maintainers/users');
-      setAllUsers(usersRes.data.data);
     } catch (error) {
       console.error('Error loading events:', error);
     }
@@ -74,6 +71,7 @@ const PublicPredictions = ({ eventId: propEventId }) => {
                 user_id: pred.user_id,
                 username: pred.username,
                 nickname: pred.user_nickname,
+                is_active: pred.user_is_active,
                 total_bets: 0
               };
             }
@@ -116,9 +114,11 @@ const PublicPredictions = ({ eventId: propEventId }) => {
     return userPredictions;
   };
 
+  const getEnabledUsers = () => users.filter(u => u.is_active);
+
   const calculateRanking = () => {
     const ranking = [];
-    users.forEach(u => {
+    getEnabledUsers().forEach(u => {
       const userStats = {
         user_id: u.user_id,
         username: u.username,
@@ -369,7 +369,7 @@ const PublicPredictions = ({ eventId: propEventId }) => {
             <p className="text-white/50 text-sm">Selecciona un evento desde la lista de eventos.</p>
           </div>
         </div>
-      ) : users.length === 0 ? (
+      ) : getEnabledUsers().length === 0 ? (
         <div className="relative overflow-hidden rounded-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-slate-700 via-slate-800 to-black rounded-2xl"></div>
           <div className="relative bg-gradient-to-br from-gray-900 via-slate-800 to-gray-900 border-2 border-slate-600 rounded-2xl p-16 text-center">
@@ -393,7 +393,7 @@ const PublicPredictions = ({ eventId: propEventId }) => {
               <h2 className="text-2xl font-black text-white">
                 📊 {events.find(e => e.event_id === parseInt(selectedEvent))?.event_name}
               </h2>
-              <p className="text-red-300/70 text-sm mt-0.5">{users.length} participantes · haz clic para ver pronósticos</p>
+              <p className="text-red-300/70 text-sm mt-0.5">{getEnabledUsers().length} participantes · haz clic para ver pronósticos</p>
             </div>
 
             {/* Table */}

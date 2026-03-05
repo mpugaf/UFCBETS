@@ -3,8 +3,9 @@ const router = express.Router();
 const invitationsController = require('../controllers/invitationsController');
 const authMiddleware = require('../middleware/auth');
 
-// Ruta pública - validar token (no requiere autenticación)
+// Rutas públicas - no requieren autenticación
 router.get('/validate/:token', invitationsController.validateToken);
+router.get('/public-list', invitationsController.listPublicTokens);
 
 // Rutas protegidas - solo para admins autenticados
 router.use(authMiddleware);

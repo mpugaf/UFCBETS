@@ -148,6 +148,39 @@ class InvitationsController {
   }
 
   /**
+   * Lista tokens disponibles públicamente (solo los pendientes, sin datos sensibles)
+   * Público - no requiere autenticación
+   */
+  async listPublicTokens(req, res) {
+    try {
+      const [rows] = await pool.execute(
+        `SELECT
+          token_id,
+          token,
+          notes,
+          expires_at,
+          created_at
+         FROM invitation_tokens
+         WHERE used_at IS NULL
+           AND revoked_at IS NULL
+           AND expires_at > NOW()
+         ORDER BY created_at ASC`
+      );
+
+      res.json({
+        success: true,
+        data: rows
+      });
+    } catch (error) {
+      console.error('List public tokens error:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Error al obtener invitaciones disponibles'
+      });
+    }
+  }
+
+  /**
    * Lista todas las invitaciones
    * Solo para admins
    */

@@ -19,6 +19,7 @@ import ClearBets from './pages/ClearBets';
 import EventDetails from './pages/EventDetails';
 import InvitationRegister from './pages/InvitationRegister';
 import InvitationsManager from './pages/InvitationsManager';
+import PublicInvitations from './pages/PublicInvitations';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -71,6 +72,10 @@ function AppContent() {
         <Route
           path="/register/:token"
           element={<InvitationRegister />}
+        />
+        <Route
+          path="/unirse"
+          element={<PublicInvitations />}
         />
         <Route
           path="/login"
