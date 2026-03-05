@@ -33,7 +33,14 @@ const FightResults = ({ eventId: propEventId, embedded = false }) => {
   const loadEvents = async () => {
     try {
       const res = await api.get('/bets/events');
-      setEvents(res.data.data);
+      const eventsData = res.data.data;
+      setEvents(eventsData);
+      // Seleccionar el evento más reciente por defecto si no hay uno ya definido
+      if (!propEventId && !searchParams.get('event_id') && eventsData.length > 0) {
+        const mostRecent = String(eventsData[0].event_id);
+        setSelectedEvent(mostRecent);
+        loadFights(mostRecent);
+      }
     } catch (error) {
       console.error('Error loading events:', error);
       setMessage({ type: 'error', text: 'Error al cargar eventos' });
@@ -142,7 +149,7 @@ const FightResults = ({ eventId: propEventId, embedded = false }) => {
                        fight.category_code === 'main_card' ? '⭐' : '🥊'}
                     </span>
                     <span className="text-sm font-semibold text-gray-600">{fight.category_name}</span>
-                    {fight.is_title_fight && (
+                    {!!fight.is_title_fight && (
                       <span className="ml-2 px-3 py-1 bg-yellow-500 text-white text-xs font-semibold rounded-full">
                         TITLE FIGHT
                       </span>

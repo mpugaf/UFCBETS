@@ -86,6 +86,14 @@ class RegistrationToken {
     `;
     await pool.execute(query, [token]);
   }
+
+  static async deleteById(tokenId) {
+    const [result] = await pool.execute(
+      'DELETE FROM registration_tokens WHERE token_id = ?',
+      [tokenId]
+    );
+    return result.affectedRows > 0;
+  }
 }
 
 module.exports = RegistrationToken;

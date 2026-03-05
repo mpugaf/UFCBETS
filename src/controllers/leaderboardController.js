@@ -60,13 +60,22 @@ const leaderboardController = {
 
       // Winner message — resilient: columns may not exist yet if migration pending
       let winnerMessage = null;
+      let eventHasMessage = false;
       try {
+        // Check if event already has a message (any user, active or not)
+        const [hasMessageRows] = await pool.execute(
+          `SELECT winner_message FROM dim_events WHERE event_id = ? AND winner_message IS NOT NULL`,
+          [eId]
+        );
+        eventHasMessage = hasMessageRows.length > 0;
+
+        // Only expose the message content if the author is still active
         const [msgRows] = await pool.execute(
           `SELECT e.winner_user_id AS user_id, e.winner_message AS message,
                   u.username, u.nickname
            FROM dim_events e
            LEFT JOIN users u ON e.winner_user_id = u.user_id
-           WHERE e.event_id = ? AND e.winner_message IS NOT NULL`,
+           WHERE e.event_id = ? AND e.winner_message IS NOT NULL AND u.is_active = TRUE`,
           [eId]
         );
         if (msgRows.length > 0) winnerMessage = msgRows[0];
@@ -76,7 +85,8 @@ const leaderboardController = {
         success: true,
         data: rows,
         event_resolved: eventResolved,
-        winner_message: winnerMessage
+        winner_message: winnerMessage,
+        event_has_message: eventHasMessage
       });
     } catch (error) {
       console.error('Error getting event leaderboard:', error);
@@ -277,7 +287,7 @@ const leaderboardController = {
                 u.username, u.nickname
          FROM dim_events e
          LEFT JOIN users u ON e.winner_user_id = u.user_id
-         WHERE e.winner_message IS NOT NULL
+         WHERE e.winner_message IS NOT NULL AND u.is_active = TRUE
          ORDER BY e.event_date DESC`
       );
       res.json({ success: true, data: rows });

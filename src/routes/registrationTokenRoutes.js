@@ -10,5 +10,6 @@ router.get('/my-tokens', authMiddleware, adminAuthMiddleware, registrationTokenC
 router.get('/all', authMiddleware, adminAuthMiddleware, registrationTokenController.getAllTokens);
 router.get('/validate/:token', registrationTokenController.validateToken);
 router.post('/revoke/:token', authMiddleware, adminAuthMiddleware, registrationTokenController.revokeToken);
+router.delete('/:token_id', authMiddleware, adminAuthMiddleware, registrationTokenController.deleteToken);
 
 module.exports = router;

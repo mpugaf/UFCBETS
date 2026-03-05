@@ -119,6 +119,20 @@ class RegistrationTokenController {
     }
   }
 
+  async deleteToken(req, res) {
+    try {
+      const { token_id } = req.params;
+      const deleted = await RegistrationToken.deleteById(token_id);
+      if (!deleted) {
+        return res.status(404).json({ success: false, message: 'Token no encontrado' });
+      }
+      res.json({ success: true, message: 'Token eliminado exitosamente' });
+    } catch (error) {
+      console.error('Error deleting token:', error);
+      res.status(500).json({ success: false, message: 'Error al eliminar token' });
+    }
+  }
+
   async revokeToken(req, res) {
     try {
       const { token } = req.params;

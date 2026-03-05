@@ -17,6 +17,7 @@ const Leaderboard = () => {
   const [eventResolved, setEventResolved] = useState(false);
   const [draftMessage, setDraftMessage] = useState('');
   const [savingMessage, setSavingMessage] = useState(false);
+  const [eventHasMessage, setEventHasMessage] = useState(false);
 
   useEffect(() => { loadInitialData(); loadAllWinnerMessages(); }, []);
 
@@ -52,7 +53,7 @@ const Leaderboard = () => {
         api.get('/config/betting-status'),
       ]);
 
-      let closedEvents = eventsRes.data.data.filter(e => !e.betting_enabled);
+      let closedEvents = eventsRes.data.data.filter(e => !e.betting_enabled && Number(e.pending_fights) === 0);
       if (user?.role !== 'admin') {
         closedEvents = closedEvents.filter(e => new Date(e.event_date).getFullYear() >= 2026);
       }
@@ -88,6 +89,7 @@ const Leaderboard = () => {
       const res = await api.get(`/leaderboard/event/${eventId}`);
       setLeaderboard(res.data.data);
       setEventResolved(res.data.event_resolved === true);
+      setEventHasMessage(res.data.event_has_message === true);
       const wm = res.data.winner_message || null;
       setWinnerMessage(wm);
       setDraftMessage(wm?.message || '');
@@ -392,11 +394,10 @@ const Leaderboard = () => {
         const winnerOfSelected = leaderboard.length > 0 ? leaderboard[0] : null;
         const isWinnerOfSelected = winnerOfSelected?.user_id === user?.user_id && eventResolved;
         const selectedEventInt = parseInt(selectedEvent);
-        const selectedHasMessage = allWinnerMessages.some(m => m.event_id === selectedEventInt);
 
         // Build display list: existing messages + optional "write" slot for winner of selected event
         const displayItems = [...allWinnerMessages];
-        if (isWinnerOfSelected && !selectedHasMessage && selectedEvent) {
+        if (isWinnerOfSelected && !eventHasMessage && selectedEvent) {
           const selInfo = events.find(e => e.event_id === selectedEventInt);
           displayItems.push({
             event_id: selectedEventInt,

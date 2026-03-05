@@ -262,6 +262,18 @@ const Maintainers = () => {
     }
   };
 
+  const deleteRegistrationToken = async (tokenId) => {
+    if (!confirm('¿Estás seguro de eliminar este token? Esta acción no se puede deshacer.')) return;
+    try {
+      await api.delete(`/registration-tokens/${tokenId}`);
+      setRegistrationTokens(registrationTokens.filter(t => t.token_id !== tokenId));
+      setMessage({ type: 'success', text: 'Token eliminado correctamente' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
+    } catch (error) {
+      setMessage({ type: 'error', text: error.response?.data?.message || 'Error al eliminar token' });
+    }
+  };
+
   const revokeRegistrationToken = async (token) => {
     if (!confirm('¿Estás seguro de revocar este token?')) return;
 
@@ -1128,23 +1140,34 @@ const Maintainers = () => {
                             <td className="px-6 py-4 text-sm text-gray-900">
                               {new Date(token.expires_at).toLocaleDateString('es-ES')}
                             </td>
-                            <td className="px-6 py-4 text-sm space-x-2">
-                              {token.status === 'disponible' && (
-                                <>
-                                  <button
-                                    onClick={() => copyTokenUrl(token.token)}
-                                    className="text-blue-600 hover:text-blue-800 font-medium"
-                                  >
-                                    📋 Copiar
-                                  </button>
-                                  <button
-                                    onClick={() => revokeRegistrationToken(token.token)}
-                                    className="text-red-600 hover:text-red-800 font-medium"
-                                  >
-                                    🗑️ Revocar
-                                  </button>
-                                </>
-                              )}
+                            <td className="px-6 py-4 text-sm">
+                              <div className="flex items-center gap-3">
+                                {token.status === 'disponible' && (
+                                  <>
+                                    <button
+                                      onClick={() => copyTokenUrl(token.token)}
+                                      className="text-blue-600 hover:text-blue-800 font-medium"
+                                    >
+                                      📋 Copiar
+                                    </button>
+                                    <button
+                                      onClick={() => revokeRegistrationToken(token.token)}
+                                      className="text-orange-600 hover:text-orange-800 font-medium"
+                                    >
+                                      Revocar
+                                    </button>
+                                  </>
+                                )}
+                                <button
+                                  onClick={() => deleteRegistrationToken(token.token_id)}
+                                  title="Eliminar token"
+                                  className="text-red-500 hover:text-red-700 transition-colors"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );
