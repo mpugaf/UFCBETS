@@ -10,6 +10,9 @@ package-lock.json
 # Logs
 *.log
 npm-debug.log*
+backend*.log
+frontend*.log
+server.log
 
 # OS
 .DS_Store
@@ -58,6 +61,12 @@ stack.txt
 # Scripts de actualización puntual
 apply_updates.sh
 apply_*.sh
+
+# Volcados de base de datos (contienen datos reales)
+*_dump.sql
+*_dump_*.sql
+ufc_*.sql
+ufcdatabase.sql
 
 # Seeds específicos de eventos (usar seed_data.sql para datos base)
 seed_ufc_*.sql
