@@ -156,6 +156,7 @@ const UsersManagement = () => {
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Total Apuestas</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Acertadas</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Puntos</th>
+                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Registro</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Estado</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Puede Apostar</th>
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">Acciones</th>
@@ -177,6 +178,9 @@ const UsersManagement = () => {
                     <td className="px-4 py-3 text-sm text-center text-gray-900">{u.total_bets}</td>
                     <td className="px-4 py-3 text-sm text-center text-gray-900">{u.correct_bets}</td>
                     <td className="px-4 py-3 text-sm text-center font-semibold text-gray-900">{u.total_points}</td>
+                    <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                      {new Date(u.created_at).toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </td>
                     {/* Estado de la cuenta */}
                     <td className="px-4 py-3 text-center">
                       {u.is_active ? (
