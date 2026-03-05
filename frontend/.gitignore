@@ -23,8 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 
-# Public images - Ignorar todas las imágenes pero mantener la estructura y READMEs
-public/images/**/*
-!public/images/**/README.md
-!public/images/
-!public/images/*/
