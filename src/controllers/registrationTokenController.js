@@ -1,6 +1,22 @@
 const RegistrationToken = require('../models/RegistrationToken');
 
 class RegistrationTokenController {
+  async getPublicList(req, res) {
+    try {
+      const [rows] = await require('../config/database').pool.execute(
+        `SELECT token_id, token, expires_at, created_at
+         FROM registration_tokens
+         WHERE is_used = FALSE
+           AND expires_at > NOW()
+         ORDER BY created_at ASC`
+      );
+      res.json({ success: true, data: rows });
+    } catch (error) {
+      console.error('Error fetching public token list:', error);
+      res.status(500).json({ success: false, message: 'Error al obtener tokens disponibles' });
+    }
+  }
+
   async createToken(req, res) {
     try {
       const { expires_in_days = 7 } = req.body;

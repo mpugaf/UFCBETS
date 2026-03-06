@@ -7,7 +7,7 @@ const PublicInvitations = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    api.get('/invitations/public-list')
+    api.get('/registration-tokens/public-list')
       .then(res => {
         if (res.data.success) {
           setTokens(res.data.data);
@@ -18,7 +18,7 @@ const PublicInvitations = () => {
   }, []);
 
   const handleOpen = (token) => {
-    window.open(`/register/${token}`, '_blank');
+    window.open(`/?token=${token}`, '_blank');
   };
 
   const labels = [
