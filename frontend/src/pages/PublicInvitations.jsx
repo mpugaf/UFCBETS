@@ -92,7 +92,7 @@ const PublicInvitations = () => {
                         {label}
                       </p>
                       <p className="text-white/30 text-xs mt-0.5">
-                        Invitación #{index + 1} · Expira {new Date(token.expires_at).toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}
+                        Invitación #{index + 1}
                       </p>
                     </div>
                     <div className="ml-4 shrink-0">

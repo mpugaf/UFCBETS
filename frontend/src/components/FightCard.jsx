@@ -61,7 +61,7 @@ const FightCard = ({ fight, onBetChange, currentBet, disabled = false, existingB
         <div className="flex justify-between items-center">
           <div>
             <h3 className="text-lg font-bold text-gray-800">{fight.event_name}</h3>
-            <p className="text-sm text-gray-600">{fight.weight_class_name || 'Peso no especificado'}</p>
+            <p className="text-sm font-bold text-gray-600">{fight.weight_class_name || 'Peso no especificado'}</p>
           </div>
           <div className="text-right">
             {Boolean(fight.is_main_event) && (

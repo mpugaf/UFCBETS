@@ -497,10 +497,10 @@ const Maintainers = () => {
 
         {/* Tabs */}
         <div className="flex mb-6 bg-gray-100 rounded-lg p-1">
-          {['fighters', 'events', 'fights', 'clear-bets', 'manage-users', 'registration-tokens'].map((tab) => (
+          {['fighters', 'events', 'fights', 'clear-bets', 'manage-users', 'registration-tokens', 'invite-manager'].map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => tab === 'invite-manager' ? navigate('/invite-manager') : setActiveTab(tab)}
               className={`flex-1 py-2 px-4 rounded-md font-semibold transition-all ${
                 activeTab === tab ? 'bg-white text-purple-600 shadow-md' : 'text-gray-600'
               }`}
@@ -511,6 +511,7 @@ const Maintainers = () => {
               {tab === 'clear-bets' && 'Limpiar Apuestas'}
               {tab === 'manage-users' && 'Gestionar Usuarios'}
               {tab === 'registration-tokens' && 'Tokens de Registro'}
+              {tab === 'invite-manager' && '🎟️ Invitaciones'}
             </button>
           ))}
         </div>

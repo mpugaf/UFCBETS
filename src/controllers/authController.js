@@ -355,6 +355,23 @@ class AuthController {
     }
   }
 
+  async getMyInvite(req, res) {
+    try {
+      const { pool } = require('../config/database');
+      const [[row]] = await pool.execute(
+        `SELECT rt.token, rt.expires_at
+         FROM users u
+         JOIN registration_tokens rt ON u.invite_token_id = rt.token_id
+         WHERE u.user_id = ? AND u.can_share_invite = TRUE AND rt.is_used = FALSE AND rt.expires_at > NOW()`,
+        [req.user.userId]
+      );
+      if (!row) return res.json({ success: true, data: null });
+      res.json({ success: true, data: { token: row.token, expires_at: row.expires_at } });
+    } catch (error) {
+      res.status(500).json({ success: false, message: 'Error al obtener invitación' });
+    }
+  }
+
   async changePassword(req, res) {
     try {
       const errors = validationResult(req);

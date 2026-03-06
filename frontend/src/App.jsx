@@ -20,6 +20,7 @@ import EventDetails from './pages/EventDetails';
 import InvitationRegister from './pages/InvitationRegister';
 import InvitationsManager from './pages/InvitationsManager';
 import PublicInvitations from './pages/PublicInvitations';
+import InviteManager from './pages/InviteManager';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -210,6 +211,14 @@ function AppContent() {
           element={
             <PrivateRoute>
               <InvitationsManager />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/invite-manager"
+          element={
+            <PrivateRoute>
+              <InviteManager />
             </PrivateRoute>
           }
         />

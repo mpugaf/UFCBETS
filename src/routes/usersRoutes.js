@@ -18,4 +18,8 @@ router.patch('/:userId/toggle-status', usersController.toggleUserStatus);
 // Reset betting for all users
 router.post('/reset-all-betting', usersController.resetAllUsersBetting);
 
+// Invite manager
+router.get('/invite-manager', usersController.getUsersForInviteManager);
+router.patch('/:userId/toggle-invite', usersController.toggleUserInvite);
+
 module.exports = router;

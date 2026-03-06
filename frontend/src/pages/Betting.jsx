@@ -148,13 +148,13 @@ const Betting = ({ eventId: propEventId }) => {
     }
   };
 
-  const getTotalBets = () => {
-    return Object.keys(tempBets).length;
-  };
+  const getTotalBets = () => Object.keys(tempBets).length;
 
-  const getTotalFights = () => {
-    return bettingStatus.categories.reduce((sum, cat) => sum + cat.fights.length, 0);
-  };
+  const getTotalFights = () =>
+    bettingStatus.categories.reduce((sum, cat) => sum + cat.fights.length, 0);
+
+  const getUnbetFights = () =>
+    getTotalFights() - Object.keys(existingBetsByFight).length;
 
   if (loading) {
     return (
@@ -172,6 +172,13 @@ const Betting = ({ eventId: propEventId }) => {
         {message.text && (
           <div className={`mb-4 p-4 rounded-lg ${message.type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}>
             {message.text}
+          </div>
+        )}
+
+        {/* Banner: peleas pendientes de apostar */}
+        {hasCategories && bettingStatus.betting_enabled && user?.role !== 'admin' && !message.text && getUnbetFights() > 0 && Object.keys(existingBetsByFight).length > 0 && (
+          <div className="mb-4 p-4 rounded-lg bg-yellow-500/20 border border-yellow-500/40 text-yellow-300 text-sm">
+            Tienes <strong>{getUnbetFights()} pelea{getUnbetFights() !== 1 ? 's' : ''}</strong> pendiente{getUnbetFights() !== 1 ? 's' : ''} de apostar. Puedes hacerlo aquí mientras las apuestas estén abiertas. Si se cierran sin que apuestes, no sumarás puntos en esas peleas.
           </div>
         )}
 
@@ -262,10 +269,6 @@ const Betting = ({ eventId: propEventId }) => {
                 <div key={category.category_code} className="space-y-4">
                   {/* Category Header */}
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="text-2xl">
-                      {category.category_code === 'title_fight' ? '🏆' :
-                       category.category_code === 'main_card' ? '⭐' : '🥊'}
-                    </div>
                     <div>
                       <h3 className="text-xl font-black text-white uppercase tracking-wide">{category.category_name}</h3>
                       <p className="text-white/40 text-xs uppercase tracking-wider">{category.fights.length} pelea{category.fights.length !== 1 ? 's' : ''}</p>
@@ -345,12 +348,12 @@ const Betting = ({ eventId: propEventId }) => {
                         <p className="text-white/60 text-sm">
                           Estás a punto de enviar <span className="text-white font-black">{getTotalBets()} apuesta{getTotalBets() !== 1 ? 's' : ''}</span>.
                         </p>
-                        <p className="text-red-400 font-bold text-sm mt-3">
-                          ⚠️ No podrás modificarlas después de confirmar
+                        <p className="text-yellow-400/80 text-sm mt-3">
+                          Una vez confirmadas no podrás modificar estas apuestas, pero podrás volver a apostar las peleas restantes mientras las apuestas estén abiertas.
                         </p>
                         {getTotalBets() < getTotalFights() && (
-                          <p className="text-yellow-400/80 text-xs mt-2">
-                            Dejas {getTotalFights() - getTotalBets()} pelea{getTotalFights() - getTotalBets() !== 1 ? 's' : ''} sin apostar. Podrás añadirlas más tarde.
+                          <p className="text-white/50 text-xs mt-2">
+                            Quedan {getTotalFights() - getTotalBets()} pelea{getTotalFights() - getTotalBets() !== 1 ? 's' : ''} sin seleccionar en esta sesión.
                           </p>
                         )}
                       </div>

@@ -159,20 +159,14 @@ class BetsController {
         [userId, requestedEventId]
       );
 
-      // REPLAY MODE LOGIC:
-      // If admin has enabled betting and this is the current event, allow betting ONLY if user hasn't bet yet
-      // This enables "replay mode" where admin can reopen past events for NEW users or users who haven't bet
-      // Users who already bet CANNOT bet again, even in replay mode
       const isCurrentEvent = requestedEventId === parseInt(currentEventId);
       const userHasAlreadyBet = existingBets.length > 0;
+      const isEventBettable = eventDate >= today || isSpecialEvent || isCurrentEvent;
 
-      // User can bet if:
-      // 1. Betting is enabled globally AND
-      // 2. User hasn't bet on this event yet AND
-      // 3. (Event is future OR special event OR is current event in replay mode)
-      const canBet = bettingEnabled &&
-                     !userHasAlreadyBet &&
-                     (eventDate >= today || isSpecialEvent || isCurrentEvent);
+      // Partial betting logic:
+      // - Current event: user can bet on remaining fights (per-fight locking is handled by existingBets)
+      // - Past events (replay mode): only allow if user hasn't bet at all
+      const canBet = bettingEnabled && isEventBettable && (isCurrentEvent || !userHasAlreadyBet);
 
       // Get fights organized by category
       const categories = await FightCategory.getFightsByCategory(requestedEventId);
@@ -623,7 +617,7 @@ class BetsController {
 
       res.json({
         success: true,
-        message: `${results.length} apuesta${results.length > 1 ? 's' : ''} registrada${results.length > 1 ? 's' : ''} exitosamente. No podrás modificarlas.`,
+        message: `${results.length} apuesta${results.length > 1 ? 's' : ''} confirmada${results.length > 1 ? 's' : ''}. Puedes volver para apostar las peleas restantes mientras las apuestas estén abiertas.`,
         data: results
       });
     } catch (error) {

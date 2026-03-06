@@ -68,6 +68,7 @@ router.post('/register', registerValidation, authController.register);
 router.post('/register-invitation', registerWithInvitationValidation, authController.registerWithInvitation);
 router.post('/login', loginValidation, authController.login);
 router.get('/profile', authMiddleware, authController.getProfile);
+router.get('/my-invite', authMiddleware, authController.getMyInvite);
 router.post('/change-password', authMiddleware, changePasswordValidation, authController.changePassword);
 
 module.exports = router;

@@ -36,6 +36,8 @@ const Dashboard = () => {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [lastEvent, setLastEvent] = useState(null);
   const [showInstructionsModal, setShowInstructionsModal] = useState(false);
+  const [myInvite, setMyInvite] = useState(null);
+  const [inviteCopied, setInviteCopied] = useState(false);
   const currentYear = new Date().getFullYear();
 
   // Función para recargar stats del usuario
@@ -111,6 +113,16 @@ const Dashboard = () => {
 
         if (lastEventResponse.data.success && lastEventResponse.data.data) {
           setLastEvent(lastEventResponse.data.data);
+        }
+
+        // Cargar invite token si el usuario es de tipo user
+        if (user?.role === 'user') {
+          try {
+            const inviteRes = await api.get('/auth/my-invite');
+            if (inviteRes.data.success && inviteRes.data.data) {
+              setMyInvite(inviteRes.data.data);
+            }
+          } catch { /* sin invitación asignada */ }
         }
 
         // Obtener el evento actual basado en current_event_id de la configuración
@@ -370,6 +382,55 @@ const Dashboard = () => {
               </div>
             )}
 
+
+            {/* Tarjeta de Invitación — solo si el admin asignó un token */}
+            {user?.role !== 'admin' && myInvite && (
+              <div className="md:col-span-3 relative group">
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-teal-700 to-black rounded-2xl transform rotate-[0.3deg] group-hover:rotate-1 transition-transform duration-300"></div>
+                <div className="relative bg-gradient-to-br from-black via-emerald-950 to-black rounded-2xl shadow-2xl p-5 text-white border-2 border-emerald-500 overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/10 to-transparent animate-shine"></div>
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="bg-emerald-500/30 p-2 rounded-lg border border-emerald-400/50">
+                        <span className="text-2xl">🎟️</span>
+                      </div>
+                      <div>
+                        <p className="text-emerald-300 text-xs font-bold uppercase tracking-wider">Invita a un amigo</p>
+                        <p className="text-white font-bold">Tienes un link de invitación disponible</p>
+                      </div>
+                    </div>
+                    <p className="text-white/60 text-xs mb-3">
+                      Comparte este link para que alguien más se registre y juegue contigo.
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const url = `${window.location.origin}/?token=${myInvite.token}`;
+                          if (navigator.clipboard) {
+                            navigator.clipboard.writeText(url).catch(() => {});
+                          } else {
+                            const ta = document.createElement('textarea');
+                            ta.value = url;
+                            ta.style.position = 'fixed';
+                            ta.style.opacity = '0';
+                            document.body.appendChild(ta);
+                            ta.focus();
+                            ta.select();
+                            document.execCommand('copy');
+                            document.body.removeChild(ta);
+                          }
+                          setInviteCopied(true);
+                          setTimeout(() => setInviteCopied(false), 2000);
+                        }}
+                        className="bg-emerald-600 hover:bg-emerald-500 transition-colors text-white text-sm font-bold px-6 py-2 rounded-lg"
+                      >
+                        {inviteCopied ? '¡Copiado!' : 'Copiar enlace de invitación'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Último Evento */}
             {lastEvent && (
