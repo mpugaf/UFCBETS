@@ -12,6 +12,7 @@ router.get('/last-completed-event', betsController.getLastCompletedEvent);
 router.get('/events', betsController.getAllEvents);
 router.get('/available', betsController.getAvailableFights);
 router.get('/predictions/:eventId', betsController.getAllEventPredictions);
+router.get('/fights/:eventId', betsController.getEventFights);
 router.post('/place', betsController.placeBet);
 router.post('/submit-all', betsController.submitAllBets);
 router.get('/my-bets', betsController.getUserBets);

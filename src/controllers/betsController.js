@@ -270,14 +270,16 @@ class BetsController {
     try {
       const { eventId } = req.params;
 
-      // Check if betting is closed globally
-      // Predictions are ONLY visible when betting is closed
-      const bettingEnabled = await Config.isBettingEnabled();
-      if (bettingEnabled) {
-        return res.status(403).json({
-          success: false,
-          message: 'Los pronósticos solo son visibles cuando las apuestas están cerradas'
-        });
+      // Admins can always see predictions; regular users only when betting is closed
+      const isAdmin = req.user?.role === 'admin';
+      if (!isAdmin) {
+        const bettingEnabled = await Config.isBettingEnabled();
+        if (bettingEnabled) {
+          return res.status(403).json({
+            success: false,
+            message: 'Los pronósticos solo son visibles cuando las apuestas están cerradas'
+          });
+        }
       }
 
       const query = `
@@ -407,6 +409,45 @@ class BetsController {
         message: 'Error al obtener pronósticos del evento',
         error: error.message
       });
+    }
+  }
+
+  async getEventFights(req, res) {
+    try {
+      const { eventId } = req.params;
+      const [rows] = await pool.execute(
+        `SELECT
+          ff.fight_id,
+          ff.winner_id,
+          ff.result_type_code,
+          ff.is_title_fight,
+          ff.is_main_event,
+          fc.category_name,
+          fc.category_code,
+          fc.display_order,
+          ff.display_order as fight_order,
+          wc.class_name as weight_class_name,
+          fr.fighter_id as red_fighter_id,
+          fr.fighter_name as red_fighter_name,
+          fr.image_path as red_fighter_image,
+          fb.fighter_id as blue_fighter_id,
+          fb.fighter_name as blue_fighter_name,
+          fb.image_path as blue_fighter_image,
+          fw.fighter_name as winner_name
+        FROM fact_fights ff
+        JOIN dim_weight_classes wc ON ff.weight_class_id = wc.weight_class_id
+        LEFT JOIN dim_fight_categories fc ON ff.fight_category_id = fc.category_id
+        JOIN dim_fighters fr ON ff.fighter_red_id = fr.fighter_id
+        JOIN dim_fighters fb ON ff.fighter_blue_id = fb.fighter_id
+        LEFT JOIN dim_fighters fw ON ff.winner_id = fw.fighter_id
+        WHERE ff.event_id = ?
+        ORDER BY fc.display_order DESC, ff.display_order ASC, ff.fight_id`,
+        [eventId]
+      );
+      res.json({ success: true, data: rows });
+    } catch (error) {
+      console.error('Get event fights error:', error);
+      res.status(500).json({ success: false, message: 'Error al obtener peleas del evento' });
     }
   }
 

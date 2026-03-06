@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
-const EventsList = ({ onNavigateToBetting, onNavigateToMyBets, onNavigateToPublicPredictions }) => {
+const EventsList = ({ onNavigateToBetting, onNavigateToMyBets, onNavigateToPublicPredictions, onNavigateToCartelera }) => {
   const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -202,12 +202,20 @@ const EventsList = ({ onNavigateToBetting, onNavigateToMyBets, onNavigateToPubli
                               🥊 Apostar Ahora
                             </button>
                           )}
-                          <button
-                            onClick={(e) => handleViewPredictions(event, e)}
-                            className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-white/80 py-2 px-4 rounded-lg text-xs font-semibold transition-all"
-                          >
-                            Ver Pronósticos
-                          </button>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onNavigateToCartelera(event.event_id); }}
+                              className="w-full bg-red-800/60 hover:bg-red-700/70 border border-red-600/50 text-white py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                            >
+                              Cartelera
+                            </button>
+                            <button
+                              onClick={(e) => handleViewPredictions(event, e)}
+                              className="w-full bg-white/10 hover:bg-white/20 border border-white/20 text-white/80 py-2 px-3 rounded-lg text-xs font-semibold transition-all"
+                            >
+                              Ver Pronósticos
+                            </button>
+                          </div>
                         </>
                       ) : isPast ? (
                         <>
@@ -219,12 +227,20 @@ const EventsList = ({ onNavigateToBetting, onNavigateToMyBets, onNavigateToPubli
                               🎟️ Ver Mis Apuestas
                             </button>
                           )}
-                          <button
-                            onClick={(e) => handleViewPredictions(event, e)}
-                            className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 py-2 px-4 rounded-lg text-xs font-semibold transition-all"
-                          >
-                            Ver Pronósticos
-                          </button>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onNavigateToCartelera(event.event_id); }}
+                              className="w-full bg-red-800/60 hover:bg-red-700/70 border border-red-600/50 text-white py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                            >
+                              Cartelera
+                            </button>
+                            <button
+                              onClick={(e) => handleViewPredictions(event, e)}
+                              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 py-2 px-3 rounded-lg text-xs font-semibold transition-all"
+                            >
+                              Ver Pronósticos
+                            </button>
+                          </div>
                         </>
                       ) : (
                         <>
@@ -236,12 +252,20 @@ const EventsList = ({ onNavigateToBetting, onNavigateToMyBets, onNavigateToPubli
                               🥊 Apostar
                             </button>
                           )}
-                          <button
-                            onClick={(e) => handleViewPredictions(event, e)}
-                            className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 py-2 px-4 rounded-lg text-xs font-semibold transition-all"
-                          >
-                            Ver Pronósticos
-                          </button>
+                          <div className="grid grid-cols-2 gap-2">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onNavigateToCartelera(event.event_id); }}
+                              className="w-full bg-red-800/60 hover:bg-red-700/70 border border-red-600/50 text-white py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                            >
+                              Cartelera
+                            </button>
+                            <button
+                              onClick={(e) => handleViewPredictions(event, e)}
+                              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 py-2 px-3 rounded-lg text-xs font-semibold transition-all"
+                            >
+                              Ver Pronósticos
+                            </button>
+                          </div>
                         </>
                       )}
                     </div>

@@ -3,6 +3,7 @@ const { validationResult } = require('express-validator');
 const User = require('../models/User');
 const RegistrationToken = require('../models/RegistrationToken');
 const { generateToken } = require('../utils/jwt');
+const { pool } = require('../config/database');
 
 class AuthController {
   async register(req, res) {
@@ -385,8 +386,9 @@ class AuthController {
       const { currentPassword, newPassword } = req.body;
       const userId = req.user.userId;
 
-      // Get user with password
-      const user = await User.findById(userId);
+      // Get user with password hash
+      const [userRows] = await pool.execute('SELECT user_id, password_hash FROM users WHERE user_id = ?', [userId]);
+      const user = userRows[0];
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -408,7 +410,6 @@ class AuthController {
       const newPasswordHash = await bcrypt.hash(newPassword, salt);
 
       // Update password
-      const { pool } = require('../config/database');
       const query = 'UPDATE users SET password_hash = ? WHERE user_id = ?';
       await pool.execute(query, [newPasswordHash, userId]);
 

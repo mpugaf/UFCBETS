@@ -13,6 +13,7 @@ import ClearBets from './ClearBets';
 import Maintainers from './Maintainers';
 import PublicPredictions from './PublicPredictions';
 import AdminPanel from './AdminPanel';
+import Cartelera from './Cartelera';
 
 const Dashboard = () => {
   const { user, logout } = useAuth();
@@ -33,6 +34,7 @@ const Dashboard = () => {
   const [selectedEventId, setSelectedEventId] = useState(null);
   const [publicPredictionsEventId, setPublicPredictionsEventId] = useState(null);
   const [myBetsEventId, setMyBetsEventId] = useState(null);
+  const [carteleraEventId, setCarteleraEventId] = useState(null);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [lastEvent, setLastEvent] = useState(null);
   const [showInstructionsModal, setShowInstructionsModal] = useState(false);
@@ -177,6 +179,11 @@ const Dashboard = () => {
   const handleNavigateToPublicPredictions = (eventId) => {
     setPublicPredictionsEventId(eventId);
     setActiveTab('public-predictions');
+  };
+
+  const handleNavigateToCartelera = (eventId) => {
+    setCarteleraEventId(eventId);
+    setActiveTab('cartelera');
   };
 
   // Definir las pestañas disponibles
@@ -526,6 +533,14 @@ const Dashboard = () => {
             onNavigateToBetting={handleNavigateToBetting}
             onNavigateToMyBets={handleNavigateToMyBets}
             onNavigateToPublicPredictions={handleNavigateToPublicPredictions}
+            onNavigateToCartelera={handleNavigateToCartelera}
+          />
+        );
+      case 'cartelera':
+        return (
+          <Cartelera
+            eventId={carteleraEventId}
+            onBack={() => setActiveTab('events')}
           />
         );
       case 'betting':
