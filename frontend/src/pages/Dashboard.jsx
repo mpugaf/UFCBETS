@@ -79,11 +79,11 @@ const Dashboard = () => {
       });
 
       setSettingsMessage({ type: 'success', text: 'Contraseña cambiada exitosamente' });
-      setPasswords({
-        currentPassword: '',
-        newPassword: '',
-        confirmNewPassword: ''
-      });
+      setPasswords({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+      setTimeout(() => {
+        setShowSettingsModal(false);
+        setSettingsMessage({ type: '', text: '' });
+      }, 1500);
     } catch (error) {
       setSettingsMessage({
         type: 'error',
