@@ -78,9 +78,10 @@ const FightCard = ({ fight, onBetChange, currentBet, disabled = false, existingB
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <BetOption
           type="fighter"
+          corner="red"
           fighter={normalizedRedFighter}
           odds={redOdds}
           selected={isRedSelected}
@@ -106,6 +107,7 @@ const FightCard = ({ fight, onBetChange, currentBet, disabled = false, existingB
 
         <BetOption
           type="fighter"
+          corner="blue"
           fighter={normalizedBlueFighter}
           odds={blueOdds}
           selected={isBlueSelected}
