@@ -13,7 +13,7 @@ const dbConfig = {
   connectionLimit: 10,
   queueLimit: 0,
   ...(isProduction && {
-    ssl: { rejectUnauthorized: true }
+    ssl: { rejectUnauthorized: false }
   })
 };
 
