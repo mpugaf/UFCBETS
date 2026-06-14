@@ -21,14 +21,15 @@ const app = express();
 const PORT = process.env.PORT || 3021;
 
 // Middleware
-const corsOptions = {
-  origin: [
-    process.env.FRONTEND_URL,
-    'http://localhost:5173',
-    'http://localhost:3021',
-  ].filter(Boolean),
-  credentials: true,
-};
+const corsOptions = process.env.NODE_ENV === 'production'
+  ? {
+      origin: [
+        process.env.FRONTEND_URL,
+        'http://localhost:5173',
+      ].filter(Boolean),
+      credentials: true,
+    }
+  : { origin: true, credentials: true };
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

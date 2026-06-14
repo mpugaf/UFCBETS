@@ -14,7 +14,7 @@ Las imágenes se suben a través del backend cuando se crean o actualizan pelead
 
 - JPG/JPEG
 - PNG
-- WebP (recomendado para mejor compresión)
+- WebP (recomendado para mejor compresión)?
 
 ## Consideraciones
 
