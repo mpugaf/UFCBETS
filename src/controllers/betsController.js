@@ -620,10 +620,12 @@ class BetsController {
 
         console.log(`Fight ${fight_id}: event_id=${event_id}, hasWinner=${hasWinner}, isCurrentEvent=${isCurrentEvent}, currentEventId=${currentEventId}`);
 
-        // Allow betting if:
-        // 1. Fight has no winner (normal mode), OR
-        // 2. Fight belongs to current event (replay mode - allows new users to bet on past events)
-        if (hasWinner && !isCurrentEvent) {
+        // Only allow betting on fights that belong to the currently active event
+        if (!isCurrentEvent) {
+          throw new Error(`Solo puedes apostar para el evento activo. Esta pelea pertenece al evento ${event_id} y el evento activo es ${currentEventId}.`);
+        }
+
+        if (hasWinner) {
           throw new Error(`Las apuestas están cerradas para la pelea ${fight_id}. El evento ya finalizó.`);
         }
 
