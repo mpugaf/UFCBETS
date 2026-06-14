@@ -46,10 +46,13 @@ const EventsList = ({ onNavigateToBetting, onNavigateToMyBets, onNavigateToPubli
     return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
+  const isActiveEvent = (event) =>
+    bettingStatus?.betting_enabled && bettingStatus?.current_event_id === event.event_id;
+
   const handleEventClick = (event) => {
-    if (event.event_status === 'upcoming' || event.event_status === 'today') {
+    if (isActiveEvent(event)) {
       if (user?.role !== 'admin' && onNavigateToBetting) onNavigateToBetting(event.event_id);
-    } else {
+    } else if (event.event_status === 'past') {
       if (user?.role === 'admin') {
         if (onNavigateToPublicPredictions) onNavigateToPublicPredictions(event.event_id);
       } else {
@@ -243,30 +246,20 @@ const EventsList = ({ onNavigateToBetting, onNavigateToMyBets, onNavigateToPubli
                           </div>
                         </>
                       ) : (
-                        <>
-                          {user?.role !== 'admin' && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onNavigateToBetting(event.event_id); }}
-                              className="w-full bg-gradient-to-r from-red-700 to-red-800 hover:from-red-600 hover:to-red-700 text-white py-2.5 px-4 rounded-lg font-black text-sm transition-all flex items-center justify-center gap-2"
-                            >
-                              🥊 Apostar
-                            </button>
-                          )}
-                          <div className="grid grid-cols-2 gap-2">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onNavigateToCartelera(event.event_id); }}
-                              className="w-full bg-red-800/60 hover:bg-red-700/70 border border-red-600/50 text-white py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
-                            >
-                              Cartelera
-                            </button>
-                            <button
-                              onClick={(e) => handleViewPredictions(event, e)}
-                              className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 py-2 px-3 rounded-lg text-xs font-semibold transition-all"
-                            >
-                              Ver Pronósticos
-                            </button>
-                          </div>
-                        </>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onNavigateToCartelera(event.event_id); }}
+                            className="w-full bg-red-800/60 hover:bg-red-700/70 border border-red-600/50 text-white py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                          >
+                            Cartelera
+                          </button>
+                          <button
+                            onClick={(e) => handleViewPredictions(event, e)}
+                            className="w-full bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 py-2 px-3 rounded-lg text-xs font-semibold transition-all"
+                          >
+                            Ver Pronósticos
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
