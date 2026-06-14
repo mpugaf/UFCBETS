@@ -1,6 +1,8 @@
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const dbConfig = {
   host: process.env.DB_HOST || '192.168.100.16',
   port: process.env.DB_PORT || 3306,
@@ -9,7 +11,10 @@ const dbConfig = {
   database: process.env.DB_NAME || 'ufc_analytics',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  ...(isProduction && {
+    ssl: { rejectUnauthorized: true }
+  })
 };
 
 const pool = mysql.createPool(dbConfig);
